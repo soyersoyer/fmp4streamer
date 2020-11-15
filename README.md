@@ -43,7 +43,7 @@ open server.py and edit the following section of code as needed.
         * meter_mode
         * video_denoise
     3. [recordingOptions](https://picamera.readthedocs.io/en/release-1.13/api_camera.html#picamera.PiCamera.start_recording)
-        *  ```css inline_headers and sps_timing should always be set to true.```
+        *  **_inline_headers and sps_timing should always be set to true._**
 ```python
 # start configuration
 serverPort = 8000
