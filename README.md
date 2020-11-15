@@ -78,3 +78,8 @@ recordingOptions = {
 1. [deal with some browsers automatically pausing the stream if the page looses focus](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API)
 2. general performance enhancements
 3. deal with any bugs that pop up
+
+# Licencing
+- [Picamera](https://github.com/waveform80/picamera/blob/master/LICENSE.txt)
+- [Tornado](https://github.com/tornadoweb/tornado/blob/master/LICENSE)
+- [jMuxer](https://github.com/samirkumardas/jmuxer/blob/master/LICENSE)
