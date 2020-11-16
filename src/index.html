@@ -59,11 +59,13 @@ top: 0; left: 0; bottom: 0; right: 0;
 
 		var ws = new WebSocket("ws://$ip:$port/ws/");
 		ws.binaryType = 'arraybuffer';
-		ws.addEventListener('message',function(event) {
-			jmuxer.feed({
-				video: new Uint8Array(event.data)
-			});
-		});   
+		ws.addEventListener('message',function(event){
+			if (!document.hidden){
+				jmuxer.feed({
+					video: new Uint8Array(event.data)
+				});				
+			}
+		});
 	}     
     </script>
 </body>

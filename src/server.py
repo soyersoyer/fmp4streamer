@@ -1,12 +1,12 @@
 import tornado.web, tornado.ioloop, tornado.websocket  
 from picamera import PiCamera, PiVideoFrameType
 from string import Template
-import io, os, socket, time
+import io, os, socket
 
 # start configuration
 serverPort = 8000
 
-camera = PiCamera(sensor_mode=1, resolution='1920x1080', framerate=30)
+camera = PiCamera(sensor_mode=4, resolution='1640x1232', framerate=30)
 camera.vflip = True
 camera.hflip = True
 camera.video_denoise = True
@@ -14,7 +14,7 @@ camera.video_denoise = True
 recordingOptions = {
     'format' : 'h264', 
     #'bitrate' : 25000000, 
-    'quality' : 20, 
+    'quality' : 25, 
     'profile' : 'high', 
     'level' : '4.2', 
     'intra_period' : 15, 
@@ -48,7 +48,6 @@ appJs = getFile('jmuxer.min.js')
 class StreamBuffer(object):
     def __init__(self,camera):
         self.frameTypes = PiVideoFrameType()
-        self.frame = None
         self.loop = None
         self.buffer = io.BytesIO()
         self.camera = camera
@@ -59,12 +58,10 @@ class StreamBuffer(object):
     def write(self, buf):
         if self.camera.frame.complete and self.camera.frame.frame_type != self.frameTypes.sps_header:
             self.buffer.write(buf)
-            self.frame = self.buffer.getvalue()
+            if self.loop is not None and wsHandler.hasConnections():
+                self.loop.add_callback(callback=wsHandler.broadcast, message=self.buffer.getvalue())
             self.buffer.seek(0)
             self.buffer.truncate()
-
-            if self.loop is not None:
-                self.loop.add_callback(callback=wsHandler.broadcast, message=self.frame)
         else:
             self.buffer.write(buf)
 
@@ -81,9 +78,20 @@ class wsHandler(tornado.websocket.WebSocketHandler):
         pass
 
     @classmethod
-    def broadcast(cl, message):
+    def hasConnections(cl):
+        if len(cl.connections) == 0:
+            return False
+        return True
+
+    @classmethod
+    async def broadcast(cl, message):
         for connection in cl.connections:
-            connection.write_message(message, True)
+            try:
+                await connection.write_message(message, True)
+            except tornado.websocket.WebSocketClosedError:
+                pass
+            except tornado.iostream.StreamClosedError:
+                pass
 
 class htmlHandler(tornado.web.RequestHandler):
     def get(self):
