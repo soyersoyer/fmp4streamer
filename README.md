@@ -1,11 +1,6 @@
 # Pi H264 To Browser
 *Pi H264 To Browser* is a siple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1 or V2 cameras module, directly to a browser. 
 
-```css
-Please note this is still under active development but is in a functional state!
-```
-
-
 # Capabillities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
 - Support any resolution and framerate the camera module can capture and the gpu can encode 
@@ -74,15 +69,16 @@ recordingOptions = {
     ```
 - [at startup](https://www.dexterindustries.com/howto/run-a-program-on-your-raspberry-pi-at-startup/)
 
+# Viewing
+When you have server.py running the feed can be vied from any broswer via the following url. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** is the port you chose in the configuration section.  
+```
+http://<rpi_address>:<serverPort>/
+```
+
 # How It Works
 - [Picamera](https://picamera.readthedocs.io/en/release-1.13/) handles all the video related tasks.
 - [Tornado](https://www.tornadoweb.org/en/stable/) handles serving out the html and js assets via http, and the h264 stream via websockets.
 - [jMuxer](https://github.com/samirkumardas/jmuxer) handles muxing the h264 stream (in browser) and playing it via Media Source extensions. 
-
-# Future Development & Known Issues
-1. [deal with some browsers automatically pausing the stream if the page looses focus](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API)
-2. general performance enhancements
-3. deal with any bugs that pop up
 
 # Licencing
 - [Picamera](https://github.com/waveform80/picamera/blob/master/LICENSE.txt)
