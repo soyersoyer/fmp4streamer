@@ -1,5 +1,5 @@
 # Pi H264 To Browser
-*Pi H264 To Browser* is a siple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1 or V2 cameras module, directly to a browser. 
+*Pi H264 To Browser* is a siple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser. 
 
 # Capabillities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
@@ -26,31 +26,34 @@
 # configuration
 open server.py and edit the following section of code as needed. 
 - The webserver will run on the port you set **_serverPort_** to.  
-- Refer to Picamera documentation for details on how to configure it.
+- Refer to Picamera documentation for details on how to configure it. A lage number of options exist (far more than listed below), that allow for 100% customization of camera. 
     1. [sensor modes, resolutions and framerates](https://picamera.readthedocs.io/en/release-1.13/fov.html#sensor-modes)
     2. [general camera settings](https://picamera.readthedocs.io/en/release-1.13/api_camera.html#picamera.PiCamera.ISO)
-        * ISO
-        * awb_mode
-        * exposure_compensation
+        * video_denoise
+        * iso
+        * shutter_speed
         * exposure_mode
+        * awb_mode
+        * awb_gains
+        * exposure_compensation
+        * brightness
+        * sharpness
+        * contrast
+        * saturation
         * hflip
         * vflip
         * meter_mode
-        * video_denoise
     3. [recordingOptions](https://picamera.readthedocs.io/en/release-1.13/api_camera.html#picamera.PiCamera.start_recording)
         *  **_inline_headers and sps_timing should always be set to true._**
 ```python
 # start configuration
 serverPort = 8000
 
-camera = PiCamera(sensor_mode=1, resolution='1920x1080', framerate=30)
-camera.vflip = True
-camera.hflip = True
-camera.video_denoise = True
+camera = PiCamera(sensor_mode=2, resolution='1920x1080', framerate=30)
+camera.video_denoise = False
 
 recordingOptions = {
     'format' : 'h264', 
-    #'bitrate' : 25000000, 
     'quality' : 20, 
     'profile' : 'high', 
     'level' : '4.2', 
@@ -59,6 +62,15 @@ recordingOptions = {
     'inline_headers' : True, 
     'sps_timing' : True
 }
+
+focusPeakingColor = '1.0, 0.0, 0.0, 1.0'
+focusPeakingthreshold = 0.055
+
+centerColor = 'rgba(255, 0, 0, 1.0)'
+centerThickness = 2
+
+gridColor = 'rgba(255, 0, 0, 1.0)'
+gridThickness = 2
 # end configuration
 ```
 
