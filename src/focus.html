@@ -1,0 +1,234 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title></title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo=">
+<style>
+body{
+margin:0;
+padding:0;
+background-color:#303030;
+}
+
+#streamStage{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+}
+
+#streamStage:before {
+content: '';
+box-sizing: border-box;
+position: absolute;
+top: 50%;
+left: 50%;
+width: 2rem;
+height: 2rem;
+margin-top: -1rem;
+margin-left: -1rem;
+}
+
+#stream, #canvas{
+max-height: 100%;
+max-width: 100%;
+margin: auto;
+position: absolute;
+top: 0; left: 0; bottom: 0; right: 0;
+}
+</style>
+<script src="/jmuxer.min.js"></script>
+</head>
+<body>
+    <div id="streamtage">
+         <video autoplay muted id="stream"></video>
+         <canvas id="canvas"></canvas>  
+    </div>
+<body>
+<script>
+class FocusPeaking{
+    constructor() {
+        this.vertices = new Float32Array([
+            -1, -1,
+            -1, 1,
+            1, 1,
+            -1, -1,
+            1, 1,
+            1, -1
+        ]);
+
+        this.vertexShader = `
+            precision mediump float;
+            attribute vec2 position;
+
+            varying vec2 tc; // texture coordinates
+
+            void main() {
+                tc = (position + 1.0) / 2.0;
+                tc.y = 1.0 - tc.y;
+                gl_Position = vec4(position, 0, 1.0);
+            }
+        `;
+        this.fragmentShader = `
+            precision mediump float;
+
+            varying vec2 tc;        // texture coordinates
+            uniform sampler2D t;    // the texture
+            uniform vec2 ts;        // the size of the texture
+
+            void main() {
+                vec2 ps = vec2(1.0, 1.0) / ts;  // the size of one pixel
+
+                // get individual pixels from the texture
+                vec3 p00 = texture2D(t, tc + vec2(-ps.x, -ps.y)).rgb *  0.0;
+                vec3 p10 = texture2D(t, tc + vec2(0.0, -ps.y)).rgb   * -1.0;
+                vec3 p20 = texture2D(t, tc + vec2(ps.x, -ps.y)).rgb  *  0.0;
+
+                vec3 p01 = texture2D(t, tc + vec2(-ps.x, 0.0)).rgb   * -1.0;
+                vec3 p11 = texture2D(t, tc + vec2(0.0, 0.0)).rgb     *  4.0;
+                vec3 p21 = texture2D(t, tc + vec2(ps.x, 0.0)).rgb    * -1.0;
+
+                vec3 p02 = texture2D(t, tc + vec2(-ps.x, ps.y)).rgb  *  0.0;
+                vec3 p12 = texture2D(t, tc + vec2(0.0, ps.y)).rgb    * -1.0;
+                vec3 p22 = texture2D(t, tc + vec2(ps.x, ps.y)).rgb   *  0.0;
+
+                vec3 outp = p00 + p10 + p20 + p01 + p11 + p21 + p02 + p12 + p22;
+
+                if((outp.r + outp.g + outp.b)/3.0 >= $threshold) {
+                    gl_FragColor = vec4($color);
+                }else{
+                    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+                }
+            }
+        `;
+
+        this.stream  = document.getElementById("stream");
+        this.canvas = document.getElementById("canvas");
+        this.gl = null;
+        this.textureSizeLocation = null;
+        this.program = null;
+        this.webglSupported = null;
+    }
+
+    initialize(){
+        this.gl = this.canvas.getContext("webgl");
+        this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
+        this.gl.clearColor(0, 0, 0, 0);   
+
+        const vertexShader = this.gl.createShader(this.gl.VERTEX_SHADER);
+        this.gl.shaderSource(vertexShader, this.vertexShader);
+        this.gl.compileShader(vertexShader);
+
+        const fragmentShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
+        this.gl.shaderSource(fragmentShader, this.fragmentShader);
+        this.gl.compileShader(fragmentShader);
+
+        this.program = this.gl.createProgram();
+        this.gl.attachShader(this.program, vertexShader);
+        this.gl.attachShader(this.program, fragmentShader);
+        this.gl.linkProgram(this.program);
+
+        const verticesBuffer = this.gl.createBuffer();
+        this.gl.bindBuffer(this.gl.ARRAY_BUFFER, verticesBuffer);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, this.vertices, this.gl.STATIC_DRAW);
+        const positionLocation = this.gl.getAttribLocation(this.program, 'position');
+        this.gl.enableVertexAttribArray(positionLocation);
+        this.gl.vertexAttribPointer(positionLocation, 2, this.gl.FLOAT, false, 0, 0);
+
+        const texture = this.gl.createTexture();
+        this.gl.activeTexture(this.gl.TEXTURE0);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.textureSizeLocation = this.gl.getUniformLocation(this.program, 'ts');
+
+        this.gl.useProgram(this.program);
+    }
+
+    render(){
+        if(this.stream.readyState === 0 || this.stream.readyState === 1){
+            return;
+        }
+
+        this.canvas.width = this.stream.clientWidth;
+        this.canvas.height = this.stream.clientHeight;
+        this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);  
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, this.stream);
+        this.gl.uniform2f(this.textureSizeLocation, this.stream.clientWidth, this.stream.clientHeight);
+
+        this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+    }
+
+    WebglSupported(){
+        if (this.webglSupported !== null){
+            return this.webglSupported;
+        }
+
+        let supportCanvas = document.createElement("canvas");
+        let supportGl = supportCanvas.getContext("webgl");
+
+        if (supportGl && supportGl instanceof WebGLRenderingContext) {
+            this.webglSupported = true;
+            return true;
+        }
+
+        this.webglSupported = false;
+        return false;
+    }
+}
+
+window.onload = function(){ 
+    const jmuxer = new JMuxer({
+        node: 'stream',
+        mode: 'video',
+        flushingTime: 0,
+        fps: $fps,
+        debug: false
+    });
+
+    const ws = new WebSocket("ws://$ip:$port/ws/");
+    ws.binaryType = 'arraybuffer';
+
+    const focusPeaking = new FocusPeaking();
+    if (focusPeaking.WebglSupported()){
+        focusPeaking.initialize();
+
+        ws.addEventListener('message',function(event){
+            if (!document.hidden){
+                jmuxer.feed({
+                    video: new Uint8Array(event.data)
+                }); 
+
+                focusPeaking.render();          
+            }
+        });
+    }else{
+        alert("Your browser doesn't support webgl, or has it disabled!");
+        ws.addEventListener('message',function(event){
+            if (!document.hidden){
+                jmuxer.feed({
+                    video: new Uint8Array(event.data)
+                });         
+            }
+        });
+    }
+
+    if (focusPeaking.WebglSupported()){
+        window.onresize = function(){
+            focusPeaking.render();
+        };
+        window.onorientationchange = function(){
+            focusPeaking.render();
+        };
+    }
+}     
+</script>
+</body>
+</html>
