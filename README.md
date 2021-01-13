@@ -9,7 +9,7 @@
 # Features
 1. A screen that displays an unaltered video stream that allows you to switch to full screen mode.
 2. A screen that provides a focus peaking overlay to help focus the camera.
-[![focus peaking](http://img.youtube.com/vi/BtihM-EcTzU/0.jpg)](http://www.youtube.com/watch?v=BtihM-EcTzU "focus peaking")
+video here
 
 3. A screen that provides a center reticle overlay to aide in centering a subject in the frame.
 4. A screen that provides a standard 9 grid overlay to aide in more creative framing.
