@@ -23,10 +23,10 @@ recordingOptions = {
 focusPeakingColor = '1.0, 0.0, 0.0, 1.0'
 focusPeakingthreshold = 0.055
 
-centerColor = 'rgba(255, 0, 0, 1.0)'
+centerColor = '255, 0, 0, 1.0'
 centerThickness = 2
 
-gridColor = 'rgba(255, 0, 0, 1.0)'
+gridColor = '255, 0, 0, 1.0'
 gridThickness = 2
 # end configuration
 

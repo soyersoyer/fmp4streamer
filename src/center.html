@@ -63,7 +63,7 @@ class Center{
         let height = this.stream.clientHeight;
         this.canvas.width = width;
         this.canvas.height = height;
-        this.context.fillStyle = '$color';
+        this.context.fillStyle = 'rgba($color)';
         
         this.context.fillRect(width/2 - this.offset, 0, this.thickness, height);
         this.context.fillRect(0, height/2 -this.offset, width, this.thickness);

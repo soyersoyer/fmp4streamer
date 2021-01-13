@@ -65,7 +65,7 @@ class Grid{
         let h = height / 3;
         this.canvas.width = width;
         this.canvas.height = height;
-        this.context.fillStyle = '$color';
+        this.context.fillStyle = 'rgba($color)';
 
         this.context.fillRect(w - this.offset, 0, this.thickness, height);
         this.context.fillRect(w * 2 - this.offset, 0, this.thickness, height);
