@@ -1,5 +1,5 @@
 # Pi H264 To Browser
-*Pi H264 To Browser* is a siple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser. 
+*Pi H264 To Browser* is a simple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser. 
 
 # Capabillities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
