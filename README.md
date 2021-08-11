@@ -116,7 +116,7 @@ gridThickness = 2
 - [at startup](https://www.dexterindustries.com/howto/run-a-program-on-your-raspberry-pi-at-startup/)
   * An rc.local example!
     ```
-    sudo python3 /home/pi/code/streaming/server.py & > /home/pi/code/streaming/log.txt 2>&1
+    sudo python3 /home/pi/code/streaming/server.py > /home/pi/code/streaming/log.txt 2>&1 &
     ```
 # How It Works
 - [Picamera](https://picamera.readthedocs.io/en/release-1.13/) handles all the video related tasks.
