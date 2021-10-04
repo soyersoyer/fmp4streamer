@@ -23,7 +23,36 @@ A screen that displays an unaltered video stream that allows you to switch to fu
    mv raspicam-main raspicam
    ```
 
-# configuration
+# Running 
+- from the terminal
+    ```
+    cd raspicam
+    python3 raspicam.py
+    ```
+- at startup
+    ```
+    cd raspicam
+    mkdir -p ~/.config/systemd/user
+    cp raspicam.service ~/.config/systemd/user/
+    systemctl --user enable raspicam
+    systemctl --user start raspicam
+    loginctl enable-linger pi
+    ```
+
+    watch the logs
+    ```
+    systemctl --user status raspicam
+    journalctl --user-unit raspicam
+    ```
+
+# Viewing
+When raspicam.py is running the feed can be vied from any broswer via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** is the port you set in the configuration section.
+The viewing screen
+    ```
+    http://<rpi_address>:<serverPort>/
+    ```
+
+# Configuration
 open raspicam.py and edit the following section of code as needed. 
 - The webserver will run on the port you set **_serverPort_** to.  
 - Refer to the Picamera documentation for details on how to configure it. A lage number of options exist (far more than listed below), that allow for 100% customization of camera. 
@@ -64,36 +93,6 @@ recordingOptions = {
 }
 # end configuration
 ```
-
-# Running 
-- from the terminal
-    ```
-    cd raspicam
-    python3 raspicam.py
-    ```
-- at startup
-    ```
-    cd raspicam
-    mkdir -p ~/.config/systemd/user
-    cp raspicam.service ~/.config/systemd/user/
-    systemctl --user enable raspicam
-    systemctl --user start raspicam
-    loginctl enable-linger pi
-    ```
-
-    watch the logs
-    ```
-    systemctl --user status raspicam
-    journalctl --user-unit raspicam
-    ```
-
-# Viewing
-When raspicam.py is running the feed can be vied from any broswer via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** is the port you set in the configuration section.
-The viewing screen
-    ```
-    http://<rpi_address>:<serverPort>/
-    ```
-
 
 # How It Works
 - [Picamera](https://picamera.readthedocs.io/en/release-1.13/) handles all the video related tasks.
