@@ -7,14 +7,8 @@ raspicam is a simple Python application designed to stream hardware encoded h.26
 - Able to do both of the preceding from any Raspberry Pi
 
 # Features
-1. A screen that displays an unaltered video stream that allows you to switch to full screen mode.
+A screen that displays an unaltered video stream that allows you to switch to full screen mode.
 
-# Viewing
-When server.py is running the feed can be vied from any broswer via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** is the port you set in the configuration section.  
-1. The viewing screen 
-    ```
-    http://<rpi_address>:<serverPort>/
-    ```
 # Installation
 1. [Ensure the camera module is properly connected to the Raspberry Pi](https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2)
 1. [Ensure the operating system is up to date, and the camera interface is enabled](https://www.raspberrypi.org/documentation/configuration/camera.md)
@@ -22,7 +16,12 @@ When server.py is running the feed can be vied from any broswer via the followin
     ```
     sudo apt-get install python3-picamera tornado
     ```
-1. Donwload raspicam, and copy the home to your Raspberry Pi    
+1. Download
+   ```
+   wget https://github.com/soyersoyer/raspicam/archive/refs/heads/main.zip
+   unzip main.zip
+   mv raspicam-main raspicam
+   ```
 
 # configuration
 open raspicam.py and edit the following section of code as needed. 
@@ -69,6 +68,7 @@ recordingOptions = {
 # Running 
 - from the terminal
     ```
+    cd raspicam
     python3 raspicam.py
     ```
 - at startup
@@ -85,6 +85,14 @@ recordingOptions = {
     systemctl --user status raspicam
     journalctl --user-unit raspicam
     ```
+
+# Viewing
+When raspicam.py is running the feed can be vied from any broswer via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** is the port you set in the configuration section.
+The viewing screen
+    ```
+    http://<rpi_address>:<serverPort>/
+    ```
+
 
 # How It Works
 - [Picamera](https://picamera.readthedocs.io/en/release-1.13/) handles all the video related tasks.
