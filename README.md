@@ -46,7 +46,7 @@ A screen that displays an unaltered video stream that allows you to switch to fu
     ```
 
 # Viewing
-When raspicam.py is running the feed can be vied from any broswer via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** is the port you set in the configuration section.
+When raspicam.py is running the feed can be vied from any broswer via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** (default: 8000) is the port you set in the configuration section.
 The viewing screen
     ```
     http://<rpi_address>:<serverPort>/
