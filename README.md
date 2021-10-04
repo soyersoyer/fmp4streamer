@@ -73,10 +73,11 @@ recordingOptions = {
     ```
 - at startup
     ```
+    cd raspicam
     mkdir -p ~/.config/systemd/user
     cp raspicam.service ~/.config/systemd/user/
-    systemd --user enable raspicam
-    systemd --user start raspicam
+    systemctl --user enable raspicam
+    systemctl --user start raspicam
     loginctl enable-linger pi
     ```
 
