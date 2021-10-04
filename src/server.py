@@ -1,4 +1,4 @@
-import tornado.web, tornado.ioloop, tornado.websocket  
+import tornado.web, tornado.ioloop, tornado.websocket
 from picamera import PiCamera, PiVideoFrameType
 from string import Template
 import io, os, socket
@@ -10,13 +10,13 @@ camera = PiCamera(sensor_mode=2, resolution='1920x1080', framerate=30)
 camera.video_denoise = False
 
 recordingOptions = {
-    'format' : 'h264', 
-    'quality' : 20, 
-    'profile' : 'high', 
-    'level' : '4.2', 
-    'intra_period' : 15, 
-    'intra_refresh' : 'both', 
-    'inline_headers' : True, 
+    'format' : 'h264',
+    'quality' : 20,
+    'profile' : 'high',
+    'level' : '4.2',
+    'intra_period' : 15,
+    'intra_refresh' : 'both',
+    'inline_headers' : True,
     'sps_timing' : True
 }
 # end configuration
