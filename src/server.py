@@ -21,10 +21,6 @@ recordingOptions = {
 }
 # end configuration
 
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-s.connect(('8.8.8.8', 0))
-serverIp = s.getsockname()[0]
-
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
@@ -35,11 +31,8 @@ def getFile(filePath):
     file.close()
     return content
 
-def templatize(content, replacements):
-    tmpl = Template(content)
-    return tmpl.substitute(replacements)
 
-indexHtml = templatize(getFile('index.html'), {'ip':serverIp, 'port':serverPort, 'fps':camera.framerate})
+indexHtml = getFile('index.html')
 jmuxerJs = getFile('jmuxer.min.js')
 
 class StreamBuffer(object):
@@ -100,9 +93,9 @@ class jmuxerHandler(tornado.web.RequestHandler):
         self.write(jmuxerJs)
 
 requestHandlers = [
-    (r"/ws/", wsHandler),
     (r"/", indexHandler),
-    (r"/jmuxer.min.js", jmuxerHandler)
+    (r"/jmuxer.min.js", jmuxerHandler),
+    (r"/ws/", wsHandler),
 ]
 
 try:

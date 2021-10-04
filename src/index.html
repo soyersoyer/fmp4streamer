@@ -46,18 +46,16 @@ top: 0; left: 0; bottom: 0; right: 0;
 	<div id="streamtage">
 		 <video controls autoplay muted id="stream"></video>	
 	</div>
-<body>
     <script>
 	window.onload = function(){	
 		var jmuxer = new JMuxer({
 			node: 'stream',
 			mode: 'video',
 			flushingTime: 0,
-			fps: $fps,
 			debug: false
 		 });
 
-		var ws = new WebSocket("ws://$ip:$port/ws/");
+		var ws = new WebSocket('ws://' + window.location.host + '/ws/');
 		ws.binaryType = 'arraybuffer';
 		ws.addEventListener('message',function(event){
 			if (!document.hidden){
