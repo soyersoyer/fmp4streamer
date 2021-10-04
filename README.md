@@ -1,5 +1,5 @@
-# Pi H264 To Browser
-*Pi H264 To Browser* is a simple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser. 
+# Raspicam
+raspicam is a simple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser. 
 
 # Capabillities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
@@ -22,10 +22,10 @@ When server.py is running the feed can be vied from any broswer via the followin
     ```
     sudo apt-get install python3-picamera tornado
     ```
-1. Donwload *Pi H264 To Browser*, and copy the src directoy to your Raspberry Pi    
+1. Donwload raspicam, and copy the home to your Raspberry Pi    
 
 # configuration
-open server.py and edit the following section of code as needed. 
+open raspicam.py and edit the following section of code as needed. 
 - The webserver will run on the port you set **_serverPort_** to.  
 - Refer to the Picamera documentation for details on how to configure it. A lage number of options exist (far more than listed below), that allow for 100% customization of camera. 
     1. [sensor modes, resolutions and framerates](https://picamera.readthedocs.io/en/release-1.13/fov.html#sensor-modes)
@@ -69,13 +69,23 @@ recordingOptions = {
 # Running 
 - from the terminal
     ```
-    python3 server.py
+    python3 raspicam.py
     ```
-- [at startup](https://www.dexterindustries.com/howto/run-a-program-on-your-raspberry-pi-at-startup/)
-  * An rc.local example!
+- at startup
     ```
-    sudo python3 /home/pi/code/streaming/server.py > /home/pi/code/streaming/log.txt 2>&1 &
+    mkdir -p ~/.config/systemd/user
+    cp raspicam.service ~/.config/systemd/user/
+    systemd --user enable raspicam
+    systemd --user start raspicam
+    loginctl enable-linger pi
     ```
+
+    watch the logs
+    ```
+    systemctl --user status raspicam
+    journalctl --user-unit raspicam
+    ```
+
 # How It Works
 - [Picamera](https://picamera.readthedocs.io/en/release-1.13/) handles all the video related tasks.
 - [Tornado](https://www.tornadoweb.org/en/stable/) handles serving out the html and js assets via http, and the h264 stream via websockets.

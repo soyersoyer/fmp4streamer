@@ -1,0 +1,10 @@
+[Unit]
+Description=raspicam
+After=network.target
+[Service]
+ExecStart=python3 raspicam.py
+Restart=always
+Environment=PATH=/usr/bin:/usr/local/bin:/bin
+WorkingDirectory=/home/pi/raspicam
+[Install]
+WantedBy=default.target
