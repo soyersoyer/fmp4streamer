@@ -14,7 +14,7 @@ A screen that displays an unaltered video stream that allows you to switch to fu
 1. [Ensure the operating system is up to date, and the camera interface is enabled](https://www.raspberrypi.org/documentation/configuration/camera.md)
 1. Install the [Picamera](https://picamera.readthedocs.io/en/release-1.13/) and Tornado Python module
     ```
-    sudo apt-get install python3-picamera tornado
+    sudo apt-get install python3-picamera python3-tornado
     ```
 1. Download
    ```
