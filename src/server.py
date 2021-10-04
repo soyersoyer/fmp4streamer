@@ -19,15 +19,6 @@ recordingOptions = {
     'inline_headers' : True, 
     'sps_timing' : True
 }
-
-focusPeakingColor = '1.0, 0.0, 0.0, 1.0'
-focusPeakingthreshold = 0.055
-
-centerColor = '255, 0, 0, 1.0'
-centerThickness = 2
-
-gridColor = '255, 0, 0, 1.0'
-gridThickness = 2
 # end configuration
 
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -49,9 +40,6 @@ def templatize(content, replacements):
     return tmpl.substitute(replacements)
 
 indexHtml = templatize(getFile('index.html'), {'ip':serverIp, 'port':serverPort, 'fps':camera.framerate})
-centerHtml = templatize(getFile('center.html'), {'ip':serverIp, 'port':serverPort, 'fps':camera.framerate,'color':centerColor, 'thickness':centerThickness})
-gridHtml = templatize(getFile('grid.html'), {'ip':serverIp, 'port':serverPort, 'fps':camera.framerate,'color':gridColor, 'thickness':gridThickness})
-focusHtml = templatize(getFile('focus.html'), {'ip':serverIp, 'port':serverPort, 'fps':camera.framerate, 'color':focusPeakingColor, 'threshold':focusPeakingthreshold})
 jmuxerJs = getFile('jmuxer.min.js')
 
 class StreamBuffer(object):
@@ -106,18 +94,6 @@ class indexHandler(tornado.web.RequestHandler):
     def get(self):
         self.write(indexHtml)
 
-class centerHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write(centerHtml)
-
-class gridHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write(gridHtml)
-
-class focusHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write(focusHtml)
-
 class jmuxerHandler(tornado.web.RequestHandler):
     def get(self):
         self.set_header('Content-Type', 'text/javascript')
@@ -126,9 +102,6 @@ class jmuxerHandler(tornado.web.RequestHandler):
 requestHandlers = [
     (r"/ws/", wsHandler),
     (r"/", indexHandler),
-    (r"/center/", centerHandler),
-    (r"/grid/", gridHandler),
-    (r"/focus/", focusHandler),
     (r"/jmuxer.min.js", jmuxerHandler)
 ]
 
