@@ -1,8 +1,7 @@
 import tornado.web, tornado.ioloop, tornado.websocket
-from string import Template
 from subprocess import Popen, PIPE
 from threading import Thread
-import io, os, socket
+import io, os
 
 # start configuration
 serverPort = 8000
