@@ -80,7 +80,7 @@ raspivid = Popen([
     '--nopreview',
     '--timeout', '0',
     '--output', '-'],
-    stdin=None, stdout=PIPE)
+    stdout=PIPE)
 # end configuration
 ```
 
