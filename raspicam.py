@@ -1,24 +1,28 @@
 import tornado.web, tornado.ioloop, tornado.websocket
-from picamera import PiCamera, PiVideoFrameType
 from string import Template
+from subprocess import Popen, PIPE
+from threading import Thread
 import io, os, socket
 
 # start configuration
 serverPort = 8000
 
-camera = PiCamera(sensor_mode=2, resolution='1920x1080', framerate=30)
-camera.video_denoise = False
-
-recordingOptions = {
-    'format' : 'h264',
-    'quality' : 20,
-    'profile' : 'high',
-    'level' : '4.2',
-    'intra_period' : 15,
-    'intra_refresh' : 'both',
-    'inline_headers' : True,
-    'sps_timing' : True
-}
+raspivid = Popen([
+    'raspivid',
+    '--width', '800',
+    '--height', '600',
+    '--framerate', '30',
+    '--intra', '15',
+    '--qp', '20',
+    '--level', '4.2',
+    '--profile', 'high',
+    '--spstimings',
+    '--inline',
+    '--irefresh', 'both',
+    '--nopreview',
+    '--timeout', '0',
+    '--output', '-'],
+    stdin=None, stdout=PIPE)
 # end configuration
 
 abspath = os.path.abspath(__file__)
@@ -35,25 +39,36 @@ def getFile(filePath):
 indexHtml = getFile('index.html')
 jmuxerJs = getFile('jmuxer.min.js')
 
+class CameraThread(Thread):
+    def __init__(self, raspivid, streamBuffer):
+        super(CameraThread, self).__init__()
+        self.raspivid = raspivid
+        self.streamBuffer = streamBuffer
+
+    def run(self):
+        while self.raspivid.poll() is None:
+            buf = self.raspivid.stdout.read1()
+            self.streamBuffer.write(buf)
+
 class StreamBuffer(object):
-    def __init__(self,camera):
-        self.frameTypes = PiVideoFrameType()
+    def __init__(self):
         self.loop = None
         self.buffer = io.BytesIO()
-        self.camera = camera
 
     def setLoop(self, loop):
         self.loop = loop
 
     def write(self, buf):
-        if self.camera.frame.complete and self.camera.frame.frame_type != self.frameTypes.sps_header:
+        lastFrameStart = buf.rfind(b'\x00\x00\x00\x01')
+        if lastFrameStart == -1:
             self.buffer.write(buf)
+        else:
+            self.buffer.write(buf[0:lastFrameStart])
             if self.loop is not None and wsHandler.hasConnections():
                 self.loop.add_callback(callback=wsHandler.broadcast, message=self.buffer.getvalue())
             self.buffer.seek(0)
             self.buffer.truncate()
-        else:
-            self.buffer.write(buf)
+            self.buffer.write(buf[lastFrameStart:])
 
 class wsHandler(tornado.websocket.WebSocketHandler):
     connections = []
@@ -99,14 +114,13 @@ requestHandlers = [
 ]
 
 try:
-    streamBuffer = StreamBuffer(camera)
-    camera.start_recording(streamBuffer, **recordingOptions) 
+    streamBuffer = StreamBuffer()
+    cameraThread = CameraThread(raspivid, streamBuffer)
+    cameraThread.start()
     application = tornado.web.Application(requestHandlers)
     application.listen(serverPort)
     loop = tornado.ioloop.IOLoop.current()
     streamBuffer.setLoop(loop)
     loop.start()
 except KeyboardInterrupt:
-    camera.stop_recording()
-    camera.close()
     loop.stop()
