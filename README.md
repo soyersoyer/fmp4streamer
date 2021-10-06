@@ -1,5 +1,5 @@
-# Raspicam
-raspicam is a simple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser. 
+# RaspiWebCam
+RaspiWebCam is a simple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser. 
 
 # Capabillities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
@@ -14,42 +14,42 @@ A screen that displays an unaltered video stream that allows you to switch to fu
 1. [Ensure the operating system is up to date, and the camera interface is enabled](https://www.raspberrypi.org/documentation/configuration/camera.md)
 1. Download
    ```
-   wget https://github.com/soyersoyer/raspicam/archive/refs/heads/main.zip
+   wget https://github.com/soyersoyer/raspiwebcam/archive/refs/heads/main.zip
    unzip main.zip
-   mv raspicam-main raspicam
+   mv raspiwebcam-main raspiwebcam
    ```
 
 # Running 
 - from the terminal
     ```
-    cd raspicam
-    python3 raspicam.py
+    cd raspiwebcam
+    python3 raspiwebcam.py
     ```
 - at startup
     ```
-    cd raspicam
+    cd raspiwebcam
     mkdir -p ~/.config/systemd/user
-    cp raspicam.service ~/.config/systemd/user/
-    systemctl --user enable raspicam
-    systemctl --user start raspicam
+    cp raspiwebcam.service ~/.config/systemd/user/
+    systemctl --user enable raspiwebcam
+    systemctl --user start raspiwebcam
     loginctl enable-linger pi
     ```
 
     watch the logs
     ```
-    systemctl --user status raspicam
-    journalctl --user-unit raspicam
+    systemctl --user status raspiwebcam
+    journalctl --user-unit raspiwebcam
     ```
 
 # Viewing
-When raspicam.py is running the feed can be vied from any broswer via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** (default: 8000) is the port you set in the configuration section.
+When raspiwebcam.py is running the feed can be vied from any broswer via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** (default: 8000) is the port you set in the configuration section.
 The viewing screen
     ```
     http://<rpi_address>:<serverPort>/
     ```
 
 # Configuration
-open raspicam.py and edit the following section of code as needed. 
+open raspiwebcam.py and edit the following section of code as needed. 
 - The webserver will run on the port you set **_serverPort_** to.  
 - Refer to the [raspivid documentation](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) for details on how to configure it. A lage number of options exist (far more than listed below), that allow for 100% customization of camera. 
     ```sh

@@ -1,10 +1,10 @@
 [Unit]
-Description=raspicam
+Description=RaspiWebCam
 After=network.target
 [Service]
-ExecStart=python3 raspicam.py
+ExecStart=python3 raspiwebcam.py
 Restart=always
 Environment=PATH=/usr/bin:/usr/local/bin:/bin
-WorkingDirectory=/home/pi/raspicam
+WorkingDirectory=/home/pi/raspiwebcam
 [Install]
 WantedBy=default.target
