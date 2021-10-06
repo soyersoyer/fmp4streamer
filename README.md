@@ -12,10 +12,6 @@ A screen that displays an unaltered video stream that allows you to switch to fu
 # Installation
 1. [Ensure the camera module is properly connected to the Raspberry Pi](https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2)
 1. [Ensure the operating system is up to date, and the camera interface is enabled](https://www.raspberrypi.org/documentation/configuration/camera.md)
-1. Install the Tornado Python module
-    ```
-    sudo apt install python3-tornado
-    ```
 1. Download
    ```
    wget https://github.com/soyersoyer/raspicam/archive/refs/heads/main.zip
@@ -86,9 +82,8 @@ raspivid = Popen([
 
 # How It Works
 - [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) handles all the video related tasks.
-- [Tornado](https://www.tornadoweb.org/en/stable/) handles serving out the html and js assets via http, and the h264 stream via websockets.
+- [Python](https://www.python.org/) handles serving out the html, js assets and the h264 stream via http.
 - [jMuxer](https://github.com/samirkumardas/jmuxer) handles muxing the h264 stream (in browser) and playing it via Media Source extensions. 
 
 # Licencing
-- [Tornado](https://github.com/tornadoweb/tornado/blob/master/LICENSE)
 - [jMuxer](https://github.com/samirkumardas/jmuxer/blob/master/LICENSE)

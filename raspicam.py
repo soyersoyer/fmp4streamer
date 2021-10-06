@@ -1,7 +1,7 @@
-import tornado.web, tornado.ioloop, tornado.websocket
+import io, os, socketserver
 from subprocess import Popen, PIPE
-from threading import Thread
-import io, os
+from threading import Thread, Condition
+from http import server
 
 # start configuration
 serverPort = 8000
@@ -32,7 +32,7 @@ def getFile(filePath):
     file = open(filePath,'r')
     content = file.read()
     file.close()
-    return content
+    return content.encode('utf-8')
 
 
 indexHtml = getFile('index.html')
@@ -51,75 +51,74 @@ class CameraThread(Thread):
 
 class StreamBuffer(object):
     def __init__(self):
-        self.loop = None
+        self.frame = None
         self.buffer = io.BytesIO()
-
-    def setLoop(self, loop):
-        self.loop = loop
+        self.condition = Condition()
 
     def write(self, buf):
         lastFrameStart = buf.rfind(b'\x00\x00\x00\x01')
-        if lastFrameStart == -1:
+        if lastFrameStart == -1 or lastFrameStart == 0:
             self.buffer.write(buf)
         else:
             self.buffer.write(buf[0:lastFrameStart])
-            if self.loop is not None and wsHandler.hasConnections():
-                self.loop.add_callback(callback=wsHandler.broadcast, message=self.buffer.getvalue())
+            with self.condition:
+                self.frame = self.buffer.getvalue()
+                self.condition.notify_all()
             self.buffer.seek(0)
             self.buffer.truncate()
             self.buffer.write(buf[lastFrameStart:])
 
-class wsHandler(tornado.websocket.WebSocketHandler):
-    connections = []
-
-    def open(self):
-        self.connections.append(self)
-
-    def on_close(self):
-        self.connections.remove(self)
-
-    def on_message(self, message):
-        pass
-
-    @classmethod
-    def hasConnections(cl):
-        if len(cl.connections) == 0:
-            return False
-        return True
-
-    @classmethod
-    async def broadcast(cl, message):
-        for connection in cl.connections:
+class StreamingHandler(server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path == '/':
+            self.send_response(301)
+            self.send_header('Location', '/index.html')
+            self.end_headers()
+        elif self.path == '/index.html':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html')
+            self.send_header('Content-Length', len(indexHtml))
+            self.end_headers()
+            self.wfile.write(indexHtml)
+        elif self.path == '/jmuxer.min.js':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/javascript')
+            self.send_header('Content-Length', len(jmuxerJs))
+            self.end_headers()
+            self.wfile.write(jmuxerJs)
+        elif self.path == '/stream.h264':
+            self.send_response(200)
+            self.send_header('Age', 0)
+            self.send_header('Cache-Control', 'no-cache, private')
+            self.send_header('Pragma', 'no-cache')
+            self.send_header('Content-Type', 'video/h264')
+            self.end_headers()
             try:
-                await connection.write_message(message, True)
-            except tornado.websocket.WebSocketClosedError:
-                pass
-            except tornado.iostream.StreamClosedError:
-                pass
+                while True:
+                    with output.condition:
+                        output.condition.wait()
+                        frame = output.frame
+                    self.wfile.write(frame)
+            except Exception as e:
+                print('Removed streaming client', self.client_address, str(e))
+        else:
+            self.send_error(404)
+            self.end_headers()
 
-class indexHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.write(indexHtml)
 
-class jmuxerHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.set_header('Content-Type', 'text/javascript')
-        self.write(jmuxerJs)
+class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+    def start(self):
+        try:
+            self.serve_forever()
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.server_close()
 
-requestHandlers = [
-    (r"/", indexHandler),
-    (r"/jmuxer.min.js", jmuxerHandler),
-    (r"/ws/", wsHandler),
-]
-
-try:
-    streamBuffer = StreamBuffer()
-    cameraThread = CameraThread(raspivid, streamBuffer)
-    cameraThread.start()
-    application = tornado.web.Application(requestHandlers)
-    application.listen(serverPort)
-    loop = tornado.ioloop.IOLoop.current()
-    streamBuffer.setLoop(loop)
-    loop.start()
-except KeyboardInterrupt:
-    loop.stop()
+output = StreamBuffer()
+cameraThread = CameraThread(raspivid, output)
+cameraThread.start()
+server = StreamingServer(('', serverPort), StreamingHandler)
+server.start()
