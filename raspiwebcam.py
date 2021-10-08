@@ -36,10 +36,10 @@ def getArg(args, arg, defaultValue):
 
 width = getArg(raspivid.args, 'width', 1920)
 height = getArg(raspivid.args, 'height', 1080)
-fps = getArg(raspivid.args, 'framerate', 30)
+framerate = getArg(raspivid.args, 'framerate', 30)
 
 sampleDuration = 500
-timescale = fps*sampleDuration
+timescale = framerate*sampleDuration
 
 
 
@@ -74,7 +74,6 @@ class MP4Writer:
     spsNALU = None
     ppsNALU = None
 
-    # todo: read width, height, sampleDuration from the SPS units
     def __init__(self, w, width, height, timescale, sampleDuration):
         self.w = w
         self.width = width
