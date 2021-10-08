@@ -84,8 +84,10 @@ class MP4Writer:
         self.writeHeader()
 
     def writeHeader(self):
-        bmff.writeFTYP(self.w)
-        bmff.writeMOOV(self.w, self.width, self.height, self.timescale)
+        buf = io.BytesIO()
+        bmff.writeFTYP(buf)
+        bmff.writeMOOV(buf, self.width, self.height, self.timescale)
+        self.w.write(buf.getvalue())
 
     def addH264NALUs(self, h264nalus):
         # skip the first delimiter, then split to nal units
@@ -112,10 +114,12 @@ class MP4Writer:
                 self.writeFrame([nalu], isIDR=False)
 
     def writeFrame(self, nalus, isIDR):
+        buf = io.BytesIO()
         avcNALUs = bmff.nalus2AVC(nalus)
-        bmff.writeMOOF(self.w, self.seq, len(avcNALUs), isIDR, self.sampleDuration)
-        bmff.writeMDAT(self.w, avcNALUs)
+        bmff.writeMOOF(buf, self.seq, avcNALUs.tell(), isIDR, self.sampleDuration)
+        bmff.writeMDAT(buf, avcNALUs)
         self.seq = self.seq + 1
+        self.w.write(buf.getvalue())
 
 
 class CameraThread(Thread):
@@ -173,7 +177,6 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                         output.condition.wait()
                         nalus = output.nalus
                     mp4Writer.addH264NALUs(nalus)
-
             except Exception as e:
                 print('Removed streaming client', self.client_address, str(e))
         else:
