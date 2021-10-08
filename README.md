@@ -9,6 +9,10 @@ RaspiWebCam is a simple Python application designed to stream hardware encoded h
 # Features
 A screen that displays an unaltered video stream that allows you to switch to full screen mode.
 
+# How It Works
+- This python script runs a [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) in the background, reads the h264 stream from it, adds some mp4 header and serves it via HTTP.
+- It's pretty lightweight.
+
 # Installation
 1. [Ensure the camera module is properly connected to the Raspberry Pi](https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2)
 1. [Ensure the operating system is up to date, and the camera interface is enabled](https://www.raspberrypi.org/documentation/configuration/camera.md)
@@ -61,29 +65,26 @@ open raspiwebcam.py and edit the following section of code as needed.
 # start configuration
 serverPort = 8000
 
+width = 800
+height = 600
+fps = 30
+
 raspivid = Popen([
     'raspivid',
-    '--width', '800',
-    '--height', '600',
-    '--framerate', '30',
+    '--width', str(width),
+    '--height', str(height),
+    '--framerate', str(fps),
     '--intra', '15',
     '--qp', '20',
+    '--irefresh', 'both',
     '--level', '4.2',
     '--profile', 'high',
     '--spstimings',
     '--inline',
-    '--irefresh', 'both',
     '--nopreview',
     '--timeout', '0',
     '--output', '-'],
     stdout=PIPE)
+
 # end configuration
 ```
-
-# How It Works
-- [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) handles all the video related tasks.
-- [Python](https://www.python.org/) handles serving out the html, js assets and the h264 stream via http.
-- [jMuxer](https://github.com/samirkumardas/jmuxer) handles muxing the h264 stream (in browser) and playing it via Media Source extensions. 
-
-# Licencing
-- [jMuxer](https://github.com/samirkumardas/jmuxer/blob/master/LICENSE)
