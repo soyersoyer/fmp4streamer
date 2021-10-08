@@ -38,8 +38,9 @@ width = getArg(raspivid.args, 'width', 1920)
 height = getArg(raspivid.args, 'height', 1080)
 fps = getArg(raspivid.args, 'framerate', 30)
 
-timescale = 10000
-sampleDuration = int(timescale/fps)
+sampleDuration = 500
+timescale = fps*sampleDuration
+
 
 
 abspath = os.path.abspath(__file__)
@@ -74,17 +75,18 @@ class MP4Writer:
     ppsNALU = None
 
     # todo: read width, height, sampleDuration from the SPS units
-    def __init__(self, w, width, height, sampleDuration):
+    def __init__(self, w, width, height, timescale, sampleDuration):
         self.w = w
         self.width = width
         self.height = height
+        self.timescale = timescale
         self.sampleDuration = sampleDuration
 
         self.writeHeader()
 
     def writeHeader(self):
         bmff.writeFTYP(self.w)
-        bmff.writeMOOV(self.w, self.width, self.height)
+        bmff.writeMOOV(self.w, self.width, self.height, self.timescale)
 
     def addH264NALUs(self, h264nalus):
         # skip the first delimiter, then split to nal units
@@ -109,7 +111,7 @@ class MP4Writer:
                 self.writeFrame([self.spsNALU, self.ppsNALU, nalu], isIDR=True)
             elif naluType == H264NALU.NONIDRTYPE:
                 self.writeFrame([nalu], isIDR=False)
-        
+
     def writeFrame(self, nalus, isIDR):
         avcNALUs = bmff.nalus2AVC(nalus)
         bmff.writeMOOF(self.w, self.seq, len(avcNALUs), isIDR, self.sampleDuration)
@@ -166,7 +168,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'video/mp4')
             self.end_headers()
             try:
-                mp4Writer = MP4Writer(self.wfile, width, height, sampleDuration)
+                mp4Writer = MP4Writer(self.wfile, width, height, timescale, sampleDuration)
                 while True:
                     with output.condition:
                         output.condition.wait()

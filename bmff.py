@@ -33,19 +33,19 @@ def writeFTYP(w):
         writeString(w, b"isomiso2iso5avc1mp41")  # compatible brands
     ))
 
-def writeMOOV(w, width, height):
+def writeMOOV(w, width, height, timescale):
     writeTag(w, b"moov", lambda w: (
-        writeMVHD(w),
-        writeTRAK(w, width, height),
+        writeMVHD(w, timescale),
+        writeTRAK(w, width, height, timescale),
         writeMVEX(w),
     ))
 
-def writeMVHD(w):
+def writeMVHD(w, timescale):
     writeTag(w, b"mvhd", lambda w: (
         writeInt(w, 0, 4),          # version and flags
         writeInt(w, 0, 4),          # creation time
         writeInt(w, 0, 4),          # modification time
-        writeInt(w, 1000, 4),       # timescale
+        writeInt(w, timescale, 4),  # timescale
         writeInt(w, 0, 4),          # duration (all 1s == unknown)
         writeInt(w, 0x00010000, 4), # rate (1.0 == normal)
         writeInt(w, 0x0100, 2),     # volume (1.0 == normal)
@@ -70,10 +70,10 @@ def writeMVHD(w):
         writeInt(w, -1, 4),         # next track id
     ))
 
-def writeTRAK(w, width, height):
+def writeTRAK(w, width, height, timescale):
     writeTag(w, b"trak", lambda w: (
         writeTKHD(w, width, height),
-        writeMDIA(w, width, height),
+        writeMDIA(w, width, height, timescale),
     ))
 
 def writeTKHD(w, width, height):
@@ -103,22 +103,22 @@ def writeTKHD(w, width, height):
         writeInt(w, int(height)<<16, 4), # height (fixed-point 16.16 format)
     ))
 
-def writeMDIA(w, width, height):
+def writeMDIA(w, width, height, timescale):
     writeTag(w, b"mdia", lambda w: (
-        writeMDHD(w),
+        writeMDHD(w, timescale),
         writeHDLR(w),
         writeMINF(w, width, height),
     ))
 
-def writeMDHD(w):
+def writeMDHD(w, timescale):
     writeTag(w, b"mdhd", lambda w: (
-        writeInt(w, 0, 4),      # version and flags
-        writeInt(w, 0, 4),      # creation time
-        writeInt(w, 0, 4),      # modification time
-        writeInt(w, 10000, 4),  # timescale
-        writeInt(w, 0, 4),      # duration
-        writeInt(w, 0x55c4, 2), # language ('und' == undefined)
-        writeInt(w, 0, 2),      # pre-defined
+        writeInt(w, 0, 4),          # version and flags
+        writeInt(w, 0, 4),          # creation time
+        writeInt(w, 0, 4),          # modification time
+        writeInt(w, timescale, 4),  # timescale
+        writeInt(w, 0, 4),          # duration
+        writeInt(w, 0x55c4, 2),     # language ('und' == undefined)
+        writeInt(w, 0, 2),          # pre-defined
     ))
 
 def writeHDLR(w):
