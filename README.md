@@ -64,15 +64,11 @@ Open raspiwebcam.py and edit the following section of code as needed.
 # start configuration
 serverPort = 8000
 
-width = 800
-height = 600
-fps = 30
-
 raspivid = Popen([
     'raspivid',
-    '--width', str(width),
-    '--height', str(height),
-    '--framerate', str(fps),
+    '--width', '800',
+    '--height', '600',
+    '--framerate', '30',
     '--intra', '15',
     '--qp', '20',
     '--irefresh', 'both',
@@ -84,6 +80,5 @@ raspivid = Popen([
     '--timeout', '0',
     '--output', '-'],
     stdout=PIPE)
-
 # end configuration
 ```

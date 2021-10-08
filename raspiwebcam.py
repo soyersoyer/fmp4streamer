@@ -8,15 +8,11 @@ import bmff
 # start configuration
 serverPort = 8000
 
-width = 800
-height = 600
-fps = 30
-
 raspivid = Popen([
     'raspivid',
-    '--width', str(width),
-    '--height', str(height),
-    '--framerate', str(fps),
+    '--width', '800',
+    '--height', '600',
+    '--framerate', '30',
     '--intra', '15',
     '--qp', '20',
     '--irefresh', 'both',
@@ -28,8 +24,19 @@ raspivid = Popen([
     '--timeout', '0',
     '--output', '-'],
     stdout=PIPE)
-
 # end configuration
+
+def getArg(args, arg, defaultValue):
+    try:
+        pos = args.index("--" + arg)
+        return int(args[pos + 1])
+    except ValueError:
+        return defaultValue
+
+
+width = getArg(raspivid.args, 'width', 1920)
+height = getArg(raspivid.args, 'height', 1080)
+fps = getArg(raspivid.args, 'framerate', 30)
 
 timescale = 10000
 sampleDuration = int(timescale/fps)
