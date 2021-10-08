@@ -10,8 +10,7 @@ RaspiWebCam is a simple Python application designed to stream hardware encoded h
 A screen that displays an unaltered video stream that allows you to switch to full screen mode.
 
 # How It Works
-- This python script runs a [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) in the background, reads the h264 stream from it, adds some mp4 header and serves it via HTTP.
-- It's pretty lightweight.
+This python script runs a [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) in the background, reads the h264 stream from it, adds some mp4 header and serves it via HTTP. It's pretty lightweight.
 
 # Installation
 1. [Ensure the camera module is properly connected to the Raspberry Pi](https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2)
@@ -46,14 +45,14 @@ A screen that displays an unaltered video stream that allows you to switch to fu
     ```
 
 # Viewing
-When raspiwebcam.py is running the feed can be vied from any broswer via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** (default: 8000) is the port you set in the configuration section.
+When raspiwebcam.py is running the feed can be vied from any browser via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** (default: 8000) is the port you set in the configuration section.
 The viewing screen
     ```
     http://<rpi_address>:<serverPort>/
     ```
 
 # Configuration
-open raspiwebcam.py and edit the following section of code as needed. 
+Open raspiwebcam.py and edit the following section of code as needed. 
 - The webserver will run on the port you set **_serverPort_** to.  
 - Refer to the [raspivid documentation](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) for details on how to configure it. A lage number of options exist (far more than listed below), that allow for 100% customization of camera. 
     ```sh
