@@ -25,10 +25,26 @@ body {
   <script>
     const video = document.querySelector('#stream');
     video.src = "stream.mp4?" + Date.now();
+    video.onended = function() {
+      console.log("onended")
+    };
+    video.onerror = function() {
+      console.log("onerror")
+    };
+    video.onstalled = function() {
+      console.log("onstalled")
+    };
+    video.onsuspend = function() {
+      console.log("onsuspend")
+    };
+    video.onwaiting = function() {
+      console.log("onwaiting")
+    };
     video.onpause = function() {
-      let buffered = video.buffered;
+      console.log("onpause")
+      /*let buffered = video.buffered;
       video.currentTime = buffered.end(buffered.length - 1) - 1;
-      video.play();
+      video.play();*/
     };
   </script>
 </body>

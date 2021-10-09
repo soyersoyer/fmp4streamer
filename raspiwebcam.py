@@ -2,6 +2,7 @@ import io, os, socketserver
 from subprocess import Popen, PIPE
 from threading import Thread, Condition
 from http import server
+from time import time
 
 import bmff
 
@@ -18,7 +19,6 @@ raspivid = Popen([
     '--irefresh', 'both',
     '--level', '4.2',
     '--profile', 'high',
-    '--spstimings',
     '--inline',
     '--nopreview',
     '--timeout', '0',
@@ -116,10 +116,13 @@ class MP4Writer:
                 self.writeFrame([nalu], isIDR=False)
 
     def writeFrame(self, nalus, isIDR):
+        if self.start == None:
+            self.start = time()
         mdatSize = bmff.getMDATsize(nalus)
         self.frameBuf.seek(0)
         self.frameBuf.truncate(bmff.MOOFSIZE + mdatSize) 
-        bmff.writeMOOF(self.frameBuf, self.seq, mdatSize, isIDR, self.sampleDuration)
+        decodeTime = int((time() - self.start) * timescale)
+        bmff.writeMOOF(self.frameBuf, self.seq, mdatSize, isIDR, self.sampleDuration, decodeTime)
         bmff.writeMDAT(self.frameBuf, nalus)
         self.seq = self.seq + 1
         self.w.write(self.frameBuf.getbuffer())

@@ -58,7 +58,7 @@ Open raspiwebcam.py and edit the following section of code as needed.
     ```sh
     $ raspivid | less
     ```
-    *  **_inline_headers and sps_timing should always be set to true._**
+    *  **--inline should always be set to true._**
 
 ```python
 # start configuration
@@ -74,7 +74,6 @@ raspivid = Popen([
     '--irefresh', 'both',
     '--level', '4.2',
     '--profile', 'high',
-    '--spstimings',
     '--inline',
     '--nopreview',
     '--timeout', '0',

@@ -275,7 +275,7 @@ MFHDSIZE = 8 + 8
 MOOFSIZE = MFHDSIZE + TRAFSIZE + 8
 
 # Movie Fragment Box
-def writeMOOF(w, seq, mdatSize, isIDR, sampleDuration):
+def writeMOOF(w, seq, mdatSize, isIDR, sampleDuration, decodeTime):
     w.write(MOOFSIZE.to_bytes(4, 'big'))
     w.write(b'moof')
 
@@ -300,7 +300,7 @@ def writeMOOF(w, seq, mdatSize, isIDR, sampleDuration):
     w.write((TFDTSIZE).to_bytes(4, 'big'))
     w.write(b'tfdt')
     w.write((0x01000000).to_bytes(4, 'big')) # version and flags
-    w.write((seq*sampleDuration).to_bytes(8, 'big'))    # base media decode time
+    w.write(decodeTime.to_bytes(8, 'big'))    # base media decode time
 
     # Track Run Box
     w.write((TRUNSIZE).to_bytes(4, 'big'))
