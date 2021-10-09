@@ -11,7 +11,7 @@ RaspiWebCam is a simple Python application designed to stream hardware encoded h
 A screen that displays an unaltered video stream that allows you to switch to full screen mode.
 
 # How It Works
-This python script runs a [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) in the background, reads the h264 stream from it, adds some mp4 header and serves it via HTTP. It's pretty lightweight.
+This python script runs a [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) in the background, reads the h264 stream from it, adds some (fragmented) mp4 header and serves it via HTTP. It's pretty lightweight.
 
 # Installation
 1. [Ensure the camera module is properly connected to the Raspberry Pi](https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2)
