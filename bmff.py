@@ -21,10 +21,10 @@ def writeFTYP(w):
     b.write(b'isomiso2iso5avc1mp41') # compatible brands
     writeTag(w, b'ftyp', b)
 
-def writeMOOV(w, width, height, timescale):
+def writeMOOV(w, width, height, timescale, sps, pps):
     b = io.BytesIO()
     writeMVHD(b, timescale)
-    writeTRAK(b, width, height, timescale)
+    writeTRAK(b, width, height, timescale, sps, pps)
     writeMVEX(b)
     writeTag(w, b'moov', b)
 
@@ -58,10 +58,10 @@ def writeMVHD(w, timescale):
     writeInt(b, 0, 4)          # next track id
     writeTag(w, b'mvhd', b)
 
-def writeTRAK(w, width, height, timescale):
+def writeTRAK(w, width, height, timescale, sps, pps):
     b = io.BytesIO()
     writeTKHD(b, width, height)
-    writeMDIA(b, width, height, timescale)
+    writeMDIA(b, width, height, timescale, sps, pps)
     writeTag(w, b'trak', b)
 
 def writeTKHD(w, width, height):
@@ -91,11 +91,11 @@ def writeTKHD(w, width, height):
     writeInt(b, int(height)<<16, 4) # height (fixed-point 16.16 format)
     writeTag(w, b'tkhd', b)
 
-def writeMDIA(w, width, height, timescale):
+def writeMDIA(w, width, height, timescale, sps, pps):
     b = io.BytesIO()
     writeMDHD(b, timescale)
     writeHDLR(b)
-    writeMINF(b, width, height)
+    writeMINF(b, width, height, sps, pps)
     writeTag(w, b'mdia', b)
 
 def writeMDHD(w, timescale):
@@ -121,11 +121,11 @@ def writeHDLR(w):
     writeInt(b, 0, 1)         # null-terminator
     writeTag(w, b'hdlr', b)
 
-def writeMINF(w, width, height):
+def writeMINF(w, width, height, sps, pps):
     b = io.BytesIO()
     writeVMHD(b)
     writeDINF(b)
-    writeSTBL(b, width, height)
+    writeSTBL(b, width, height, sps, pps)
     writeTag(w, b'minf', b)
 
 def writeVMHD(w):
@@ -154,9 +154,9 @@ def writeURL(w):
     writeInt(b, 1, 4) # version and flags
     writeTag(w, b'url ', b)
 
-def writeSTBL(w, width, height):
+def writeSTBL(w, width, height, sps, pps):
     b = io.BytesIO()
-    writeSTSD(b, width, height)
+    writeSTSD(b, width, height, sps, pps)
     writeSTSZ(b)
     writeSTSC(b)
     writeSTTS(b)
@@ -164,14 +164,14 @@ def writeSTBL(w, width, height):
     writeTag(w, b'stbl', b)
 
 # Sample Table Box
-def writeSTSD(w, width, height):
+def writeSTSD(w, width, height, sps, pps):
     b = io.BytesIO()
     writeInt(b, 0, 6) # reserved
     writeInt(b, 1, 2) # deta reference index
-    writeAVC1(b, width, height)
+    writeAVC1(b, width, height, sps, pps)
     writeTag(w, b'stsd', b)
 
-def writeAVC1(w, width, height):
+def writeAVC1(w, width, height, sps, pps):
     b = io.BytesIO()
     writeInt(b, 0, 6)           # reserved
     writeInt(b, 1, 2)           # data reference index
@@ -189,12 +189,12 @@ def writeAVC1(w, width, height):
     b.write(bytes(32))          # compressor name
     writeInt(b, 0x18, 2)        # depth
     writeInt(b, 0xffff, 2)      # pre-defined
-    writeAVCC(b)
+    writeAVCC(b, sps, pps)
     writeTag(w, b'avc1', b)
 
 # MPEG-4 Part 15 extension
 # See ISO/IEC 14496-15:2004 5.3.4.1.2
-def writeAVCC(w):
+def writeAVCC(w, sps, pps):
     b = io.BytesIO()
     writeInt(b, 1, 1)    # configuration version
     writeInt(b, 0x64, 1) # H.264 profile (0x64 == high)
@@ -202,10 +202,6 @@ def writeAVCC(w):
     writeInt(b, 0x2a, 1) # H.264 level (0x28 == 4.0, 0x2a == 4.2)
     writeInt(b, 0xff, 1) # nal unit length - 1 (upper 6 bits == 1)
     writeInt(b, 0xe1, 1) # number of sps (upper 3 bits == 1)
-
-    # Raspberry Pi 3B+ SPS/PPS for H.264 high 4.2
-    sps = b'\x27\x64\x00\x2a\xac\x2b\x40\x28\x02\xdd\x00\xf1\x22\x6a'
-    pps = b'\x28\xee\x02\x5c\xb0\x00'
 
     writeInt(b, len(sps), 2)
     b.write(sps)

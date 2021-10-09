@@ -68,10 +68,10 @@ class H264NALU:
         return nalubytes[0] & 0x1f
 
 class MP4Writer:
-    def __init__(self, w, width, height, timescale, sampleDuration, spsNALU, ppsNALU):
+    def __init__(self, w, width, height, timescale, sampleDuration, sps, pps):
         self.seq = 1
-        self.spsNALU = spsNALU
-        self.ppsNALU = ppsNALU
+        self.sps = sps
+        self.pps = pps
         self.start = None
         self.frameBuf = io.BytesIO()
 
@@ -83,13 +83,13 @@ class MP4Writer:
 
         self.writeHeader()
 
-        if not self.spsNALU or self.ppsNALU:
+        if not self.sps or not self.pps:
             print("MP4Writer: sps, pps NALUs are missing!")
 
     def writeHeader(self):
         buf = io.BytesIO()
         bmff.writeFTYP(buf)
-        bmff.writeMOOV(buf, self.width, self.height, self.timescale)
+        bmff.writeMOOV(buf, self.width, self.height, self.timescale, self.sps, self.pps)
         self.w.write(buf.getbuffer())
 
     def addNALUs(self, nalus):
@@ -101,7 +101,7 @@ class MP4Writer:
                 continue
 
             if naluType == H264NALU.IDRTYPE:
-                self.writeFrame([self.spsNALU, self.ppsNALU, nalu], isIDR=True)
+                self.writeFrame([self.sps, self.pps, nalu], isIDR=True)
             elif naluType == H264NALU.NONIDRTYPE:
                 self.writeFrame([nalu], isIDR=False)
 
@@ -110,7 +110,7 @@ class MP4Writer:
             self.start = time()
         mdatSize = bmff.getMDATsize(nalus)
         self.frameBuf.seek(0)
-        self.frameBuf.truncate(bmff.MOOFSIZE + mdatSize) 
+        self.frameBuf.truncate(bmff.MOOFSIZE + mdatSize)
         decodeTime = int((time() - self.start) * timescale)
         bmff.writeMOOF(self.frameBuf, self.seq, mdatSize, isIDR, self.sampleDuration, decodeTime)
         bmff.writeMDAT(self.frameBuf, nalus)
@@ -132,8 +132,8 @@ class CameraThread(Thread):
 class StreamBuffer(object):
     def __init__(self):
         self.justStarted = True
-        self.spsNALU = None
-        self.ppsNALU = None
+        self.sps = None
+        self.pps = None
         self.nalus = []
         self.prevBuf = bytes()
         self.condition = Condition()
@@ -159,9 +159,9 @@ class StreamBuffer(object):
         if self.justStarted:
             if len(nalus) > 2:
                 if H264NALU.getType(nalus[0]) == H264NALU.SPSTYPE:
-                    self.spsNALU = nalus[0]
+                    self.sps = nalus[0]
                 if H264NALU.getType(nalus[1]) == H264NALU.PPSTYPE:
-                    self.ppsNALU = nalus[1]
+                    self.pps = nalus[1]
             self.justStarted = False
 
 
@@ -189,7 +189,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'video/mp4; codecs="avc1.640028"')
             self.end_headers()
             try:
-                mp4Writer = MP4Writer(self.wfile, width, height, timescale, sampleDuration, output.spsNALU, output.ppsNALU)
+                mp4Writer = MP4Writer(self.wfile, width, height, timescale, sampleDuration, output.sps, output.pps)
                 while True:
                     with output.condition:
                         output.condition.wait()
