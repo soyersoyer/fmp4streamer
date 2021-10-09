@@ -69,13 +69,14 @@ class H264NALU:
         return nalubytes[0] & 0x1f
 
 class MP4Writer:
-    seq = 1
-    hasIDR = False
-    spsNALU = None
-    ppsNALU = None
-    frameBuf = io.BytesIO()
-
     def __init__(self, w, width, height, timescale, sampleDuration):
+        self.seq = 1
+        self.spsNALU = None
+        self.ppsNALU = None
+        self.hasIDR = False
+        self.start = None
+        self.frameBuf = io.BytesIO()
+
         self.w = w
         self.width = width
         self.height = height
