@@ -73,6 +73,7 @@ class MP4Writer:
     hasIDR = False
     spsNALU = None
     ppsNALU = None
+    frameBuf = io.BytesIO()
 
     def __init__(self, w, width, height, timescale, sampleDuration):
         self.w = w
@@ -87,7 +88,7 @@ class MP4Writer:
         buf = io.BytesIO()
         bmff.writeFTYP(buf)
         bmff.writeMOOV(buf, self.width, self.height, self.timescale)
-        self.w.write(buf.getvalue())
+        self.w.write(buf.getbuffer())
 
     def addH264NALUs(self, h264nalus):
         # skip the first delimiter, then split to nal units
@@ -114,12 +115,13 @@ class MP4Writer:
                 self.writeFrame([nalu], isIDR=False)
 
     def writeFrame(self, nalus, isIDR):
-        buf = io.BytesIO()
-        avcNALUs = bmff.nalus2AVC(nalus)
-        bmff.writeMOOF(buf, self.seq, avcNALUs.tell(), isIDR, self.sampleDuration)
-        bmff.writeMDAT(buf, avcNALUs)
+        mdatSize = bmff.getMDATsize(nalus)
+        self.frameBuf.seek(0)
+        self.frameBuf.truncate(bmff.MOOFSIZE + mdatSize) 
+        bmff.writeMOOF(self.frameBuf, self.seq, mdatSize, isIDR, self.sampleDuration)
+        bmff.writeMDAT(self.frameBuf, nalus)
         self.seq = self.seq + 1
-        self.w.write(buf.getvalue())
+        self.w.write(self.frameBuf.getbuffer())
 
 
 class CameraThread(Thread):
