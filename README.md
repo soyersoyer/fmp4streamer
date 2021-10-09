@@ -59,7 +59,6 @@ Open raspiwebcam.py and edit the following section of code as needed.
     ```sh
     $ raspivid | less
     ```
-    **--inline should always be set.**
 
 ```python
 # start configuration
@@ -75,7 +74,6 @@ raspivid = Popen([
     '--irefresh', 'both',
     '--level', '4.2',
     '--profile', 'high',
-    '--inline',
     '--nopreview',
     '--timeout', '0',
     '--output', '-'],
