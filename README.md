@@ -5,6 +5,7 @@ RaspiWebCam is a simple Python application designed to stream hardware encoded h
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
 - Support any resolution and framerate the camera module can capture and the gpu can encode 
 - Able to do both of the preceding from any Raspberry Pi
+- Able to handle high framerate (60-90 fps) streams
 
 # Features
 A screen that displays an unaltered video stream that allows you to switch to full screen mode.
