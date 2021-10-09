@@ -183,10 +183,10 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(indexHtml)
         elif self.path.startswith('/stream.mp4'):
-            self.send_response(206)
+            self.send_response(200)
             self.send_header('Age', '0')
             self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            self.send_header('Content-Type', 'video/mp4')
+            self.send_header('Content-Type', 'video/mp4; codecs="avc1.640028"')
             self.end_headers()
             try:
                 mp4Writer = MP4Writer(self.wfile, width, height, timescale, sampleDuration, output.spsNALU, output.ppsNALU)
