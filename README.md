@@ -58,7 +58,7 @@ Open raspiwebcam.py and edit the following section of code as needed.
     ```sh
     $ raspivid | less
     ```
-    *  **--inline should always be set to true._**
+    **--inline should always be set.**
 
 ```python
 # start configuration
