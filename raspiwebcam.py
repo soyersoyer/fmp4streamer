@@ -91,11 +91,6 @@ class MP4Writer:
         bmff.writeMOOV(buf, self.width, self.height, self.timescale)
         self.w.write(buf.getbuffer())
 
-    def addH264NALUs(self, h264nalus):
-        # skip the first delimiter, then split to nal units
-        nalus = h264nalus[4:].split(H264NALU.DELIMITER)
-        self.addNALUs(nalus)
-
     def addNALUs(self, nalus):
         for nalu in nalus:
             naluType = H264NALU.getType(nalu)
@@ -141,22 +136,32 @@ class CameraThread(Thread):
 
 class StreamBuffer(object):
     def __init__(self):
-        self.nalus = None
-        self.buffer = io.BytesIO()
+        self.nalus = []
+        self.prevBuf = bytes()
         self.condition = Condition()
 
     def write(self, buf):
-        lastNALUStart = buf.rfind(H264NALU.DELIMITER)
-        if lastNALUStart == -1 or lastNALUStart == 0:
-            self.buffer.write(buf)
-        else:
-            self.buffer.write(buf[0:lastNALUStart])
+        nalus = []
+        findFrom = 0
+        while True:
+            NALUStart = buf.find(H264NALU.DELIMITER, findFrom)
+            if NALUStart == 0:
+                if self.prevBuf:
+                    nalus.append(self.prevBuf)
+                    self.prevBuf = bytes()
+                findFrom = NALUStart + 4
+            elif NALUStart > 0:
+                nalus.append(self.prevBuf + buf[findFrom:NALUStart])
+                self.prevBuf = bytes()
+                findFrom = NALUStart + 4
+            else:
+                self.prevBuf = self.prevBuf + buf[findFrom:]
+                break
+
+        if len(nalus):
             with self.condition:
-                self.nalus = self.buffer.getvalue()
+                self.nalus = nalus
                 self.condition.notify_all()
-            self.buffer.seek(0)
-            self.buffer.truncate()
-            self.buffer.write(buf[lastNALUStart:])
 
 class StreamingHandler(server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -182,7 +187,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                     with output.condition:
                         output.condition.wait()
                         nalus = output.nalus
-                    mp4Writer.addH264NALUs(nalus)
+                    mp4Writer.addNALUs(nalus)
             except Exception as e:
                 print('Removed streaming client', self.client_address, str(e))
         else:
