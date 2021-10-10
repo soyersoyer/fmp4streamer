@@ -55,8 +55,7 @@ codec = "avc1." + get_or(profiles, profile, "high") + get_or(levels, level, "4")
 
 
 def get_index_html():
-    return f"""
-<!doctype html>
+    return f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -78,17 +77,19 @@ body {{ margin:0; padding:0; background-color:#303030; }}
 </body>
 </html>
 """.encode('utf-8')
-streamm3u8 = f"""
-#EXTM3U
+
+def get_stream_m3u8():
+    return f"""#EXTM3U
 #EXT-X-STREAM-INF:BANDWIDTH=150000,RESOLUTION={width}x{height},CODECS="{codec}"
 streaminf.m3u8
 """.encode('utf-8')
-streaminfm3u8 = """
-#EXTM3U
+
+def get_streaminf_m3u8():
+    return f"""#EXTM3U
 #EXT-X-TARGETDURATION:49057
 #EXT-X-VERSION:4
 #EXTINF:49057.00,
-stream.mp4
+stream.mp4?{int(time())}
 #EXT-X-ENDLIST
 """.encode('utf-8')
 
@@ -230,6 +231,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Age', '0')
             self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
             self.send_header('Content-Type', 'application/x-mpegURL')
+            streamm3u8 = get_stream_m3u8()
             self.send_header('Content-Length', len(streamm3u8))
             self.end_headers()
             self.wfile.write(streamm3u8)
@@ -238,6 +240,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Age', '0')
             self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
             self.send_header('Content-Type', 'application/x-mpegURL')
+            streaminfm3u8 = get_streaminf_m3u8()
             self.send_header('Content-Length', len(streaminfm3u8))
             self.end_headers()
             self.wfile.write(streaminfm3u8)
