@@ -3,11 +3,12 @@ from subprocess import Popen, PIPE
 from threading import Thread, Condition
 from http import server
 from time import time
+from warnings import warn
 
 import bmff
 
 # start configuration
-serverPort = 8000
+server_port = 8000
 
 raspivid = Popen([
     'raspivid',
@@ -25,35 +26,73 @@ raspivid = Popen([
     stdout=PIPE, bufsize=65536)
 # end configuration
 
-def getArg(args, arg, defaultValue):
+def get_arg(args, arg, default):
     try:
         pos = args.index("--" + arg)
-        return int(args[pos + 1])
+        return type(default)(args[pos + 1])
     except ValueError:
-        return defaultValue
+        return default
+
+def get_or(dict, value, default):
+    if value in dict:
+        return dict[value]
+    else:
+        warn(value, "not in", dict, "using", default)
+        return dict[default]
 
 
-width = getArg(raspivid.args, 'width', 1920)
-height = getArg(raspivid.args, 'height', 1080)
-framerate = getArg(raspivid.args, 'framerate', 30)
+width = get_arg(raspivid.args, 'width', 1920)
+height = get_arg(raspivid.args, 'height', 1080)
+framerate = get_arg(raspivid.args, 'framerate', 30)
+profile = get_arg(raspivid.args, 'profile', 'high')
+level = get_arg(raspivid.args, 'level', '4')
 
-sampleDuration = 500
-timescale = framerate*sampleDuration
+sampleduration = 500
+timescale = framerate*sampleduration
 
-
-
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
-
-def getFile(filePath):
-    file = open(filePath,'r')
-    content = file.read()
-    file.close()
-    return content.encode('utf-8')
+profiles = {"high" : "6400", "main": "4d00", "baseline": "4200"}
+levels = {"4": "28", "4.1": "29", "4.2": "2a"}
+codec = "avc1." + get_or(profiles, profile, "high") + get_or(levels, level, "4")
 
 
-indexHtml = getFile('index.html')
+def get_index_html():
+    return f"""
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RaspiWebCam</title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo=">
+<style>
+body {{ margin:0; padding:0; background-color:#303030; }}
+#stream {{
+  max-height: 100%; max-width: 100%; margin: auto; position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+}}
+</style>
+</head>
+<body>
+  <video controls autoplay muted playsinline id="stream">
+    <source src="stream.mp4?{int(time())}" type='video/mp4; codecs="{codec}"'>
+    <source src="stream.m3u8" type="application/x-mpegURL">
+  </video>
+</body>
+</html>
+""".encode('utf-8')
+streamm3u8 = f"""
+#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=150000,RESOLUTION={width}x{height},CODECS="{codec}"
+streaminf.m3u8
+""".encode('utf-8')
+streaminfm3u8 = """
+#EXTM3U
+#EXT-X-TARGETDURATION:49057
+#EXT-X-VERSION:4
+#EXTINF:49057.00,
+stream.mp4
+#EXT-X-ENDLIST
+""".encode('utf-8')
+
 
 class H264NALU:
     DELIMITER = b'\x00\x00\x00\x01'
@@ -64,105 +103,107 @@ class H264NALU:
     PPSTYPE = 8
 
     @staticmethod
-    def getType(nalubytes):
+    def get_type(nalubytes):
         return nalubytes[0] & 0x1f
 
 class MP4Writer:
-    def __init__(self, w, width, height, timescale, sampleDuration, sps, pps):
+    def __init__(self, w, width, height, timescale, sampleduration, sps, pps):
         self.seq = 1
         self.sps = sps
         self.pps = pps
         self.start = None
-        self.frameBuf = io.BytesIO()
+        self.framebuf = io.BytesIO()
 
         self.w = w
         self.width = width
         self.height = height
         self.timescale = timescale
-        self.sampleDuration = sampleDuration
+        self.sampleduration = sampleduration
 
-        self.writeHeader()
+        self.write_header()
 
         if not self.sps or not self.pps:
-            print("MP4Writer: sps, pps NALUs are missing!")
+            raise ValueError("MP4Writer: sps, pps NALUs are missing!")
 
-    def writeHeader(self):
+    def write_header(self):
         buf = io.BytesIO()
         bmff.writeFTYP(buf)
         bmff.writeMOOV(buf, self.width, self.height, self.timescale, self.sps, self.pps)
         self.w.write(buf.getbuffer())
 
-    def addNALUs(self, nalus):
+    def add_nalus(self, nalus):
         for nalu in nalus:
-            naluType = H264NALU.getType(nalu)
+            nalutype = H264NALU.get_type(nalu)
 
             # our first frame should have SPS, PPS, IDR NALU, so wait until we have an IDR
-            if self.seq == 1 and naluType != H264NALU.IDRTYPE:
+            if self.seq == 1 and nalutype != H264NALU.IDRTYPE:
                 continue
 
-            if naluType == H264NALU.IDRTYPE:
-                self.writeFrame([self.sps, self.pps, nalu], isIDR=True)
-            elif naluType == H264NALU.NONIDRTYPE:
-                self.writeFrame([nalu], isIDR=False)
+            if nalutype == H264NALU.IDRTYPE:
+                self.write_frame([self.sps, self.pps, nalu], is_idr=True)
+            elif nalutype == H264NALU.NONIDRTYPE:
+                self.write_frame([nalu], is_idr=False)
 
-    def writeFrame(self, nalus, isIDR):
+    def write_frame(self, nalus, is_idr):
         if self.start == None:
             self.start = time()
-        mdatSize = bmff.getMDATsize(nalus)
-        self.frameBuf.seek(0)
-        self.frameBuf.truncate(bmff.MOOFSIZE + mdatSize)
-        decodeTime = int((time() - self.start) * timescale)
-        bmff.writeMOOF(self.frameBuf, self.seq, mdatSize, isIDR, self.sampleDuration, decodeTime)
-        bmff.writeMDAT(self.frameBuf, nalus)
+        mdatsize = bmff.get_mdat_size(nalus)
+        self.framebuf.seek(0)
+        self.framebuf.truncate(bmff.MOOFSIZE + mdatsize)
+        decodetime = int((time() - self.start) * timescale)
+        bmff.write_moof(self.framebuf, self.seq, mdatsize, is_idr, self.sampleduration, decodetime)
+        bmff.write_mdat(self.framebuf, nalus)
         self.seq = self.seq + 1
-        self.w.write(self.frameBuf.getbuffer())
+        self.w.write(self.framebuf.getbuffer())
 
 
 class CameraThread(Thread):
-    def __init__(self, raspivid, streamBuffer):
+    def __init__(self, raspivid, streambuffer):
         super(CameraThread, self).__init__()
         self.raspivid = raspivid
-        self.streamBuffer = streamBuffer
+        self.streambuffer = streambuffer
 
     def run(self):
         while self.raspivid.poll() is None:
             buf = self.raspivid.stdout.read1()
-            self.streamBuffer.write(buf)
+            self.streambuffer.write(buf)
 
 class StreamBuffer(object):
     def __init__(self):
-        self.justStarted = True
+        self.juststarted = True
         self.sps = None
         self.pps = None
         self.nalus = []
-        self.prevBuf = bytes()
+        self.prevbuf = bytes()
         self.condition = Condition()
 
     def write(self, buf):
         nalus = []
-        findFrom = 0
+        findfrom = 0
         while True:
-            NALUStart = buf.find(H264NALU.DELIMITER, findFrom)
-            if NALUStart == 0:
-                if self.prevBuf:
-                    nalus.append(self.prevBuf)
-                    self.prevBuf = bytes()
-                findFrom = NALUStart + 4
-            elif NALUStart > 0:
-                nalus.append(self.prevBuf + buf[findFrom:NALUStart])
-                self.prevBuf = bytes()
-                findFrom = NALUStart + 4
+            nalustart = buf.find(H264NALU.DELIMITER, findfrom)
+            if nalustart == 0:
+                if self.prevbuf:
+                    nalus.append(self.prevbuf)
+                    self.prevbuf = bytes()
+                findfrom = nalustart + 4
+            elif nalustart > 0:
+                nalus.append(self.prevbuf + buf[findfrom:nalustart])
+                self.prevbuf = bytes()
+                findfrom = nalustart + 4
             else:
-                self.prevBuf = self.prevBuf + buf[findFrom:]
+                self.prevbuf = self.prevbuf + buf[findfrom:]
                 break
 
-        if self.justStarted:
+        if self.juststarted:
             if len(nalus) > 2:
-                if H264NALU.getType(nalus[0]) == H264NALU.SPSTYPE:
+                if H264NALU.get_type(nalus[0]) == H264NALU.SPSTYPE:
                     self.sps = nalus[0]
-                if H264NALU.getType(nalus[1]) == H264NALU.PPSTYPE:
+                if H264NALU.get_type(nalus[1]) == H264NALU.PPSTYPE:
                     self.pps = nalus[1]
-            self.justStarted = False
+                if not self.sps or not self.pps:
+                    warn("StreamBuffer: can't read SPS and PPS from the first frame") 
+            self.juststarted = False
 
 
         if len(nalus):
@@ -178,23 +219,42 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.end_headers()
         elif self.path == '/index.html':
             self.send_response(200)
+            self.send_header('Age', '0')
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
             self.send_header('Content-Type', 'text/html')
-            self.send_header('Content-Length', len(indexHtml))
+            indexhtml = get_index_html()
+            self.send_header('Content-Length', len(indexhtml))
             self.end_headers()
-            self.wfile.write(indexHtml)
+            self.wfile.write(indexhtml)
+        elif self.path == '/stream.m3u8':
+            self.send_response(200)
+            self.send_header('Age', '0')
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.send_header('Content-Type', 'application/x-mpegURL')
+            self.send_header('Content-Length', len(streamm3u8))
+            self.end_headers()
+            self.wfile.write(streamm3u8)
+        elif self.path == '/streaminf.m3u8':
+            self.send_response(200)
+            self.send_header('Age', '0')
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.send_header('Content-Type', 'application/x-mpegURL')
+            self.send_header('Content-Length', len(streaminfm3u8))
+            self.end_headers()
+            self.wfile.write(streaminfm3u8)
         elif self.path.startswith('/stream.mp4'):
             self.send_response(200)
             self.send_header('Age', '0')
             self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            self.send_header('Content-Type', 'video/mp4; codecs="avc1.64002a"')
+            self.send_header('Content-Type', 'video/mp4; codecs="' + codec + '"')
             self.end_headers()
             try:
-                mp4Writer = MP4Writer(self.wfile, width, height, timescale, sampleDuration, output.sps, output.pps)
+                mp4_writer = MP4Writer(self.wfile, width, height, timescale, sampleduration, output.sps, output.pps)
                 while True:
                     with output.condition:
                         output.condition.wait()
                         nalus = output.nalus
-                    mp4Writer.addNALUs(nalus)
+                    mp4_writer.add_nalus(nalus)
             except Exception as e:
                 print('Removed streaming client', self.client_address, str(e))
         else:
@@ -216,5 +276,5 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 output = StreamBuffer()
 cameraThread = CameraThread(raspivid, output)
 cameraThread.start()
-server = StreamingServer(('', serverPort), StreamingHandler)
+server = StreamingServer(('', server_port), StreamingHandler)
 server.start()

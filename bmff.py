@@ -271,7 +271,7 @@ MFHDSIZE = 8 + 8
 MOOFSIZE = MFHDSIZE + TRAFSIZE + 8
 
 # Movie Fragment Box
-def writeMOOF(w, seq, mdatSize, isIDR, sampleDuration, decodeTime):
+def write_moof(w, seq, mdatSize, isIDR, sampleDuration, decodeTime):
     w.write(MOOFSIZE.to_bytes(4, 'big'))
     w.write(b'moof')
 
@@ -312,14 +312,14 @@ def writeMOOF(w, seq, mdatSize, isIDR, sampleDuration, decodeTime):
     w.write((mdatSize - 8).to_bytes(4, 'big')) # sample size
 
 # Media Data Box
-def writeMDAT(w, nalus):
-    w.write(getMDATsize(nalus).to_bytes(4, 'big'))
+def write_mdat(w, nalus):
+    w.write(get_mdat_size(nalus).to_bytes(4, 'big'))
     w.write(b'mdat')
     for nalu in nalus:
         w.write((len(nalu)).to_bytes(4, 'big'))
         w.write(nalu)
 
-def getMDATsize(nalus):
+def get_mdat_size(nalus):
     size = 8
     for nalu in nalus:
         size += 4+len(nalu)
