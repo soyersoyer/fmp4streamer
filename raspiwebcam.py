@@ -178,31 +178,20 @@ class StreamBuffer(object):
         self.condition = Condition()
 
     def write(self, buf):
-        nalus = []
-        findfrom = 0
-        while True:
-            nalustart = buf.find(H264NALU.DELIMITER, findfrom)
-            if nalustart == 0:
-                if self.prevbuf:
-                    nalus.append(self.prevbuf)
-                    self.prevbuf = bytes()
-                findfrom = nalustart + 4
-            elif nalustart > 0:
-                nalus.append(self.prevbuf + buf[findfrom:nalustart])
-                self.prevbuf = bytes()
-                findfrom = nalustart + 4
-            else:
-                self.prevbuf = self.prevbuf + buf[findfrom:]
-                break
+        nalus = buf.split(H264NALU.DELIMITER)
+        nalus[0] = self.prevbuf + nalus[0]
+        self.prevbuf = nalus.pop()
 
         if self.juststarted:
             if len(nalus) > 2:
+                if len(nalus[0]) == 0:
+                    nalus.pop(0)
                 if H264NALU.get_type(nalus[0]) == H264NALU.SPSTYPE:
                     self.sps = nalus[0]
                 if H264NALU.get_type(nalus[1]) == H264NALU.PPSTYPE:
                     self.pps = nalus[1]
-                if not self.sps or not self.pps:
-                    logging.warning("StreamBuffer: can't read SPS and PPS from the first NALUs")
+            if not self.sps or not self.pps:
+                logging.warning("StreamBuffer: can't read SPS and PPS from the first NALUs")
             self.juststarted = False
 
 
