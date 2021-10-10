@@ -237,7 +237,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Age', '0')
             self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            self.send_header('Content-Type', 'video/mp4; codecs="' + codec + '"')
+            self.send_header('Content-Type', f'video/mp4; codecs="{codec}"')
             self.end_headers()
             try:
                 mp4_writer = MP4Writer(self.wfile, width, height, timescale, sampleduration, output.sps, output.pps)
