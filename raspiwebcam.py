@@ -149,12 +149,12 @@ class MP4Writer:
             self.start = time()
         mdatsize = bmff.get_mdat_size(nalus)
         self.framebuf.seek(0)
-        self.framebuf.truncate(bmff.MOOFSIZE + mdatsize)
         decodetime = int((time() - self.start) * timescale)
         bmff.write_moof(self.framebuf, self.seq, mdatsize, is_idr, self.sampleduration, decodetime)
         bmff.write_mdat(self.framebuf, nalus)
         self.seq = self.seq + 1
-        self.w.write(self.framebuf.getbuffer())
+        self.w.write(self.framebuf.getbuffer()[:bmff.MOOFSIZE + mdatsize])
+
 
 
 class CameraThread(Thread):
