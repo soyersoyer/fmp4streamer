@@ -1,9 +1,8 @@
-import io, socketserver
+import io, socketserver, logging
 from subprocess import Popen, PIPE
 from threading import Thread, Condition
 from http import server
 from time import time
-from warnings import warn
 
 import bmff
 
@@ -37,7 +36,7 @@ def get_or(dict, value, default):
     if value in dict:
         return dict[value]
     else:
-        warn(value, "not in", dict, "using", default)
+        logging.warning(f"{value} not in {dict}, using {default}")
         return dict[default]
 
 
@@ -202,7 +201,7 @@ class StreamBuffer(object):
                 if H264NALU.get_type(nalus[1]) == H264NALU.PPSTYPE:
                     self.pps = nalus[1]
                 if not self.sps or not self.pps:
-                    warn("StreamBuffer: can't read SPS and PPS from the first frame") 
+                    logging.warning("StreamBuffer: can't read SPS and PPS from the first NALUs")
             self.juststarted = False
 
 
@@ -256,7 +255,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                         nalus = output.nalus
                     mp4_writer.add_nalus(nalus)
             except Exception as e:
-                print('Removed streaming client', self.client_address, str(e))
+                self.log_error(f'Removed streaming client {self.client_address} {str(e)}')
         else:
             self.send_error(404)
             self.end_headers()
