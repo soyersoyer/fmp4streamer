@@ -1,4 +1,4 @@
-import io, os, socketserver
+import io, socketserver
 from subprocess import Popen, PIPE
 from threading import Thread, Condition
 from http import server
