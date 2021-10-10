@@ -6,9 +6,7 @@ RaspiWebCam is a simple Python application designed to stream hardware encoded h
 - Support any resolution and framerate the camera module can capture and the gpu can encode 
 - Able to do both of the preceding from any Raspberry Pi
 - Able to handle high framerate (60-90 fps) streams
-
-# Features
-A screen that displays an unaltered video stream that allows you to switch to full screen mode.
+- Able to stream to iPhone and Safari via HLS.
 
 # How It Works
 This python script runs a [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) in the background, reads the h264 stream from it, adds some (fragmented) mp4 header and serves it via HTTP. It's pretty lightweight.
@@ -46,7 +44,7 @@ This python script runs a [raspivid](https://www.raspberrypi.org/documentation/a
     ```
 
 # Viewing
-When raspiwebcam.py is running the feed can be vied from any browser via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** (default: 8000) is the port you set in the configuration section.
+When raspiwebcam.py is running the feed can be viewed from any browser via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** (default: 8000) is the port you set in the configuration section.
 The viewing screen
     ```
     http://<rpi_address>:<serverPort>/
@@ -62,7 +60,7 @@ Open raspiwebcam.py and edit the following section of code as needed.
 
 ```python
 # start configuration
-serverPort = 8000
+server_port = 8000
 
 raspivid = Popen([
     'raspivid',
