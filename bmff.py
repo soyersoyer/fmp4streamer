@@ -1,5 +1,10 @@
 import io
 
+HANDLERNAME = b"TinyStreamer"
+COMPATSTRING = b"isomiso2iso5avc1mp41"
+
+# functions unrolled to minimize function calls, because they are very slow in python
+
 # References:
 # ISO/IEC 14496 Part 12
 # ISO/IEC 14496 Part 15
@@ -9,258 +14,242 @@ import io
 def writeInt(w, value, n):
     w.write(value.to_bytes(n, 'big'))
 
-def writeTag(w, tag, b):
-    writeInt(w, b.tell()+8, 4) # box size
-    w.write(tag)               # box type
-    w.write(b.getvalue())      # box content
+FTYPSIZE = 8 + len(COMPATSTRING) + 8
+def write_ftyp(w):
+    w.write((FTYPSIZE).to_bytes(4, 'big'))
+    w.write(b'ftyp')
+    w.write(b'isom')      # major brand
+    w.write((0x200).to_bytes(4, 'big')) # minor version
+    w.write(COMPATSTRING) # compatible brands
 
-def writeFTYP(w):
-    b = io.BytesIO()
-    b.write(b'isom')                 # major brand
-    writeInt(b, 0x200, 4)            # minor version
-    b.write(b'isomiso2iso5avc1mp41') # compatible brands
-    writeTag(w, b'ftyp', b)
+MVHDSIZE = 100 + 8
 
-def writeMOOV(w, width, height, timescale, sps, pps):
-    b = io.BytesIO()
-    writeMVHD(b, timescale)
-    writeTRAK(b, width, height, timescale, sps, pps)
-    writeMVEX(b)
-    writeTag(w, b'moov', b)
+TKHDSIZE = 84 + 8
 
-def writeMVHD(w, timescale):
-    b = io.BytesIO()
-    writeInt(b, 0, 4)          # version and flags
-    writeInt(b, 0, 4)          # creation time
-    writeInt(b, 0, 4)          # modification time
-    writeInt(b, timescale, 4)  # timescale
-    writeInt(b, 0, 4)          # duration (all 1s == unknown)
-    writeInt(b, 0x00010000, 4) # rate (1.0 == normal)
-    writeInt(b, 0x0100, 2)     # volume (1.0 == normal)
-    writeInt(b, 0, 2)          # reserved
-    writeInt(b, 0, 4)          # reserved
-    writeInt(b, 0, 4)          # reserved
-    writeInt(b, 0x00010000, 4) # matrix
-    writeInt(b, 0x0, 4)        # matrix
-    writeInt(b, 0x0, 4)        # matrix
-    writeInt(b, 0x0, 4)        # matrix
-    writeInt(b, 0x00010000, 4) # matrix
-    writeInt(b, 0x0, 4)        # matrix
-    writeInt(b, 0x0, 4)        # matrix
-    writeInt(b, 0x0, 4)        # matrix
-    writeInt(b, 0x40000000, 4) # matrix
-    writeInt(b, 0, 4)          # pre-defined
-    writeInt(b, 0, 4)          # pre-defined
-    writeInt(b, 0, 4)          # pre-defined
-    writeInt(b, 0, 4)          # pre-defined
-    writeInt(b, 0, 4)          # pre-defined
-    writeInt(b, 0, 4)          # pre-defined
-    writeInt(b, 0, 4)          # next track id
-    writeTag(w, b'mvhd', b)
+MDHDSIZE = 24 + 8
+HDLRSIZE = 24 + len(HANDLERNAME) + 1 + 8
 
-def writeTRAK(w, width, height, timescale, sps, pps):
-    b = io.BytesIO()
-    writeTKHD(b, width, height)
-    writeMDIA(b, width, height, timescale, sps, pps)
-    writeTag(w, b'trak', b)
+VMHDSIZE = 12 + 8
 
-def writeTKHD(w, width, height):
-    b = io.BytesIO()
-    writeInt(b, 7, 4)               # version and flags (track enabled)
-    writeInt(b, 0, 4)               # creation time
-    writeInt(b, 0, 4)               # modification time
-    writeInt(b, 1, 4)               # track id
-    writeInt(b, 0, 4)               # reserved
-    writeInt(b, 0, 4)               # duration
-    writeInt(b, 0, 4)               # reserved
-    writeInt(b, 0, 4)               # reserved
-    writeInt(b, 0, 2)               # layer
-    writeInt(b, 0, 2)               # alternate group
-    writeInt(b, 0, 2)               # volume (ignored for video tracks)
-    writeInt(b, 0, 2)               # reserved
-    writeInt(b, 0x00010000, 4)      # matrix
-    writeInt(b, 0x0, 4)             # matrix
-    writeInt(b, 0x0, 4)             # matrix
-    writeInt(b, 0x0, 4)             # matrix
-    writeInt(b, 0x00010000, 4)      # matrix
-    writeInt(b, 0x0, 4)             # matrix
-    writeInt(b, 0x0, 4)             # matrix
-    writeInt(b, 0x0, 4)             # matrix
-    writeInt(b, 0x40000000, 4)      # matrix
-    writeInt(b, int(width)<<16, 4)  # width (fixed-point 16.16 format)
-    writeInt(b, int(height)<<16, 4) # height (fixed-point 16.16 format)
-    writeTag(w, b'tkhd', b)
+URLSIZE = 4 + 8
+DREFSIZE = 8 + URLSIZE + 8
+DINFSIZE = DREFSIZE + 8
 
-def writeMDIA(w, width, height, timescale, sps, pps):
-    b = io.BytesIO()
-    writeMDHD(b, timescale)
-    writeHDLR(b)
-    writeMINF(b, width, height, sps, pps)
-    writeTag(w, b'mdia', b)
+AVCCSIZEWOSPSPPS = 11 + 8
+AVC1SIZEWOSPSPPS = 78 + AVCCSIZEWOSPSPPS + 8
+STSDSIZEWOSPSPPS = 8 + AVC1SIZEWOSPSPPS + 8
+STSZSIZE = 12 + 8
+STSCSIZE = 8 + 8
+STTSSIZE = 8 + 8
+STCOSIZE = 8 + 8
+STBLSIZEWOSPSPPS = STSDSIZEWOSPSPPS + STSZSIZE + STSCSIZE + STTSSIZE + STCOSIZE + 8
 
-def writeMDHD(w, timescale):
-    b = io.BytesIO()
-    writeInt(b, 0, 4)          # version and flags
-    writeInt(b, 0, 4)          # creation time
-    writeInt(b, 0, 4)          # modification time
-    writeInt(b, timescale, 4)  # timescale
-    writeInt(b, 0, 4)          # duration
-    writeInt(b, 0x55c4, 2)     # language ('und' == undefined)
-    writeInt(b, 0, 2)          # pre-defined
-    writeTag(w, b'mdhd', b)
+MINFSIZEWOSPSPPS = VMHDSIZE + DINFSIZE + STBLSIZEWOSPSPPS + 8
 
-def writeHDLR(w):
-    b = io.BytesIO()
-    writeInt(b, 0, 4)         # version and flags
-    writeInt(b, 0, 4)         # pre-defined
-    b.write(b'vide')          # handler type
-    writeInt(b, 0, 4)         # reserved
-    writeInt(b, 0, 4)         # reserved
-    writeInt(b, 0, 4)         # reserved
-    b.write(b'TinyStreamer')  # name
-    writeInt(b, 0, 1)         # null-terminator
-    writeTag(w, b'hdlr', b)
+MDIASIZEWOSPSPPS = MDHDSIZE + HDLRSIZE + MINFSIZEWOSPSPPS + 8
 
-def writeMINF(w, width, height, sps, pps):
-    b = io.BytesIO()
-    writeVMHD(b)
-    writeDINF(b)
-    writeSTBL(b, width, height, sps, pps)
-    writeTag(w, b'minf', b)
+TRAKSIZEWOSPSPPS = TKHDSIZE + MDIASIZEWOSPSPPS + 8
 
-def writeVMHD(w):
-    b = io.BytesIO()
-    writeInt(b, 1, 4) # version and flags
-    writeInt(b, 0, 2) # graphics mode
-    writeInt(b, 0, 2) # opcolor
-    writeInt(b, 0, 2) # opcolor
-    writeInt(b, 0, 2) # opcolor
-    writeTag(w, b'vmhd', b)
+MEHDSIZE = 8 + 8
+TREXSIZE = 24 + 8
+MVEXSIZE = MEHDSIZE + TREXSIZE + 8
 
-def writeDINF(w):
-    b = io.BytesIO()
-    writeDREF(b)
-    writeTag(w, b'dinf', b)
+MOOVSIZEWOSPSPPS = MVHDSIZE + TRAKSIZEWOSPSPPS + MVEXSIZE + 8
 
-def writeDREF(w):
-    b = io.BytesIO()
-    writeInt(b, 0, 4) # version and flags
-    writeInt(b, 1, 4) # entry count
-    writeURL(b)
-    writeTag(w, b'dref', b)
+def write_moov(w, width, height, timescale, sps, pps):
+    w.write((MOOVSIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
+    w.write(b'moov')
 
-def writeURL(w):
-    b = io.BytesIO()
-    writeInt(b, 1, 4) # version and flags
-    writeTag(w, b'url ', b)
+    w.write(MVHDSIZE.to_bytes(4, 'big'))
+    w.write(b'mvhd')
+    w.write((0).to_bytes(4, 'big'))          # version and flags
+    w.write((0).to_bytes(4, 'big'))          # creation time
+    w.write((0).to_bytes(4, 'big'))          # modification time
+    w.write((timescale).to_bytes(4, 'big'))  # timescale
+    w.write((0).to_bytes(4, 'big'))          # duration (all 1s == unknown)
+    w.write((0x00010000).to_bytes(4, 'big')) # rate (1.0 == normal)
+    w.write((0x0100).to_bytes(2, 'big'))     # volume (1.0 == normal)
+    w.write((0).to_bytes(2, 'big'))          # reserved
+    w.write((0).to_bytes(4, 'big'))          # reserved
+    w.write((0).to_bytes(4, 'big'))          # reserved
+    w.write((0x00010000).to_bytes(4, 'big')) # matrix
+    w.write((0x0).to_bytes(4, 'big'))        # matrix
+    w.write((0x0).to_bytes(4, 'big'))        # matrix
+    w.write((0x0).to_bytes(4, 'big'))        # matrix
+    w.write((0x00010000).to_bytes(4, 'big')) # matrix
+    w.write((0x0).to_bytes(4, 'big'))        # matrix
+    w.write((0x0).to_bytes(4, 'big'))        # matrix
+    w.write((0x0).to_bytes(4, 'big'))        # matrix
+    w.write((0x40000000).to_bytes(4, 'big')) # matrix
+    w.write((0).to_bytes(4, 'big'))          # pre-defined
+    w.write((0).to_bytes(4, 'big'))          # pre-defined
+    w.write((0).to_bytes(4, 'big'))          # pre-defined
+    w.write((0).to_bytes(4, 'big'))          # pre-defined
+    w.write((0).to_bytes(4, 'big'))          # pre-defined
+    w.write((0).to_bytes(4, 'big'))          # pre-defined
+    w.write((0).to_bytes(4, 'big'))          # next track id
 
-def writeSTBL(w, width, height, sps, pps):
-    b = io.BytesIO()
-    writeSTSD(b, width, height, sps, pps)
-    writeSTSZ(b)
-    writeSTSC(b)
-    writeSTTS(b)
-    writeSTCO(b)
-    writeTag(w, b'stbl', b)
+    w.write((TRAKSIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
+    w.write(b'trak')
+    
+    w.write(TKHDSIZE.to_bytes(4, 'big'))
+    w.write(b'tkhd')
+    w.write((7).to_bytes(4, 'big'))               # version and flags (track enabled)
+    w.write((0).to_bytes(4, 'big'))               # creation time
+    w.write((0).to_bytes(4, 'big'))               # modification time
+    w.write((1).to_bytes(4, 'big'))               # track id
+    w.write((0).to_bytes(4, 'big'))               # reserved
+    w.write((0).to_bytes(4, 'big'))               # duration
+    w.write((0).to_bytes(4, 'big'))               # reserved
+    w.write((0).to_bytes(4, 'big'))               # reserved
+    w.write((0).to_bytes(2, 'big'))               # layer
+    w.write((0).to_bytes(2, 'big'))               # alternate group
+    w.write((0).to_bytes(2, 'big'))               # volume (ignored for video tracks)
+    w.write((0).to_bytes(2, 'big'))               # reserved
+    w.write((0x00010000).to_bytes(4, 'big'))      # matrix
+    w.write((0x0).to_bytes(4, 'big'))             # matrix
+    w.write((0x0).to_bytes(4, 'big'))             # matrix
+    w.write((0x0).to_bytes(4, 'big'))             # matrix
+    w.write((0x00010000).to_bytes(4, 'big'))      # matrix
+    w.write((0x0).to_bytes(4, 'big'))             # matrix
+    w.write((0x0).to_bytes(4, 'big'))             # matrix
+    w.write((0x0).to_bytes(4, 'big'))             # matrix
+    w.write((0x40000000).to_bytes(4, 'big'))      # matrix
+    w.write((int(width)<<16).to_bytes(4, 'big'))  # width (fixed-point 16.16 format)
+    w.write((int(height)<<16).to_bytes(4, 'big')) # height (fixed-point 16.16 format)
 
-# Sample Table Box
-def writeSTSD(w, width, height, sps, pps):
-    b = io.BytesIO()
-    writeInt(b, 0, 6) # reserved
-    writeInt(b, 1, 2) # deta reference index
-    writeAVC1(b, width, height, sps, pps)
-    writeTag(w, b'stsd', b)
+    w.write((MDIASIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
+    w.write(b'mdia')
 
-def writeAVC1(w, width, height, sps, pps):
-    b = io.BytesIO()
-    writeInt(b, 0, 6)           # reserved
-    writeInt(b, 1, 2)           # data reference index
-    writeInt(b, 0, 2)           # pre-defined
-    writeInt(b, 0, 2)           # reserved
-    writeInt(b, 0, 4)           # pre-defined
-    writeInt(b, 0, 4)           # pre-defined
-    writeInt(b, 0, 4)           # pre-defined
-    writeInt(b, int(width), 2)  # width
-    writeInt(b, int(height), 2) # height
-    writeInt(b, 0x00480000, 4)  # horizontal resolution: 72 dpi
-    writeInt(b, 0x00480000, 4)  # vertical resolution: 72 dpi
-    writeInt(b, 0, 4)           # data size: 0
-    writeInt(b, 1, 2)           # frame count: 1
-    b.write(bytes(32))          # compressor name
-    writeInt(b, 0x18, 2)        # depth
-    writeInt(b, 0xffff, 2)      # pre-defined
-    writeAVCC(b, sps, pps)
-    writeTag(w, b'avc1', b)
+    w.write(MDHDSIZE.to_bytes(4, 'big'))
+    w.write(b'mdhd')
+    w.write((0).to_bytes(4, 'big'))          # version and flags
+    w.write((0).to_bytes(4, 'big'))          # creation time
+    w.write((0).to_bytes(4, 'big'))          # modification time
+    w.write((timescale).to_bytes(4, 'big'))  # timescale
+    w.write((0).to_bytes(4, 'big'))          # duration
+    w.write((0x55c4).to_bytes(2, 'big'))     # language ('und' == undefined)
+    w.write((0).to_bytes(2, 'big'))          # pre-defined
 
-# MPEG-4 Part 15 extension
-# See ISO/IEC 14496-15:2004 5.3.4.1.2
-def writeAVCC(w, sps, pps):
-    b = io.BytesIO()
-    writeInt(b, 1, 1)    # configuration version
-    writeInt(b, 0x64, 1) # H.264 profile (0x64 == high)
-    writeInt(b, 0x00, 1) # H.264 profile compatibility
-    writeInt(b, 0x2a, 1) # H.264 level (0x28 == 4.0, 0x2a == 4.2)
-    writeInt(b, 0xff, 1) # nal unit length - 1 (upper 6 bits == 1)
-    writeInt(b, 0xe1, 1) # number of sps (upper 3 bits == 1)
+    w.write(HDLRSIZE.to_bytes(4, 'big'))
+    w.write(b'hdlr')
+    w.write((0).to_bytes(4, 'big'))         # version and flags
+    w.write((0).to_bytes(4, 'big'))         # pre-defined
+    w.write(b'vide')          # handler type
+    w.write((0).to_bytes(4, 'big'))         # reserved
+    w.write((0).to_bytes(4, 'big'))         # reserved
+    w.write((0).to_bytes(4, 'big'))         # reserved
+    w.write(HANDLERNAME)       # name
+    w.write((0).to_bytes(1, 'big'))         # null-terminator
 
-    writeInt(b, len(sps), 2)
-    b.write(sps)
-    writeInt(b, 1, 1) # number of pps
-    writeInt(b, len(pps), 2)
-    b.write(pps)
-    writeTag(w, b'avcC', b)
+    w.write((MINFSIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
+    w.write(b'minf')
 
-def writeSTTS(w):
-    b = io.BytesIO()
-    writeInt(b, 0, 4) # version and flags
-    writeInt(b, 0, 4) # entry count
-    writeTag(w, b'stts', b)
+    w.write(VMHDSIZE.to_bytes(4, 'big'))
+    w.write(b'vmhd')
+    w.write((1).to_bytes(4, 'big')) # version and flags
+    w.write((0).to_bytes(2, 'big')) # graphics mode
+    w.write((0).to_bytes(2, 'big')) # opcolor
+    w.write((0).to_bytes(2, 'big')) # opcolor
+    w.write((0).to_bytes(2, 'big')) # opcolor
 
-def writeSTSC(w):
-    b = io.BytesIO()
-    writeInt(b, 0, 4) # version and flags
-    writeInt(b, 0, 4) # entry count
-    writeTag(w, b'stsc', b)
+    w.write((DINFSIZE).to_bytes(4, 'big'))
+    w.write(b'dinf')
 
-def writeSTSZ(w):
-    b = io.BytesIO()
-    writeInt(b, 0, 4) # version and flags
-    writeInt(b, 0, 4) # sample size
-    writeInt(b, 0, 4) # sample count
-    writeTag(w, b'stsz', b)
+    w.write((DREFSIZE).to_bytes(4, 'big'))
+    w.write(b'dref')
+    w.write((0).to_bytes(4, 'big')) # version and flags
+    w.write((1).to_bytes(4, 'big')) # entry count
 
-def writeSTCO(w):
-    b = io.BytesIO()
-    writeInt(b, 0, 4) # version and flags
-    writeInt(b, 0, 4) # entry count
-    writeTag(w, b'stco', b)
+    w.write((URLSIZE).to_bytes(4, 'big'))
+    w.write(b'url ')
+    w.write((1).to_bytes(4, 'big')) # version and flags
 
-# Movie Extends Box
-def writeMVEX(w):
-    b = io.BytesIO()
-    writeMEHD(b)
-    writeTREX(b)
-    writeTag(w, b'mvex', b)
+    w.write((STBLSIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
+    w.write(b'stbl')
 
+    # Sample Table Box
+    w.write((STSDSIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
+    w.write(b'stsd')
+    w.write((0).to_bytes(6, 'big')) # reserved
+    w.write((1).to_bytes(2, 'big')) # deta reference index
 
-# Movie Extends Header Box
-def writeMEHD(w):
-    b = io.BytesIO()
-    writeInt(b, 0, 4) # version and flags
-    writeInt(b, 0, 4) # fragment duration
-    writeTag(w, b'mehd', b)
+    w.write((AVC1SIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
+    w.write(b'avc1')
+    w.write((0).to_bytes(6, 'big'))           # reserved
+    w.write((1).to_bytes(2, 'big'))           # data reference index
+    w.write((0).to_bytes(2, 'big'))           # pre-defined
+    w.write((0).to_bytes(2, 'big'))           # reserved
+    w.write((0).to_bytes(4, 'big'))           # pre-defined
+    w.write((0).to_bytes(4, 'big'))           # pre-defined
+    w.write((0).to_bytes(4, 'big'))           # pre-defined
+    w.write((int(width)).to_bytes(2, 'big'))  # width
+    w.write((int(height)).to_bytes(2, 'big')) # height
+    w.write((0x00480000).to_bytes(4, 'big'))  # horizontal resolution: 72 dpi
+    w.write((0x00480000).to_bytes(4, 'big'))  # vertical resolution: 72 dpi
+    w.write((0).to_bytes(4, 'big'))           # data size: 0
+    w.write((1).to_bytes(2, 'big'))           # frame count: 1
+    w.write(bytes(32))          # compressor name
+    w.write((0x18).to_bytes(2, 'big'))        # depth
+    w.write((0xffff).to_bytes(2, 'big'))      # pre-defined
 
+    # MPEG-4 Part 15 extension
+    # See ISO/IEC 14496-15:2004 5.3.4.1.2
+    w.write((AVCCSIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
+    w.write(b'avcC')
+    w.write((1).to_bytes(1, 'big'))    # configuration version
+    w.write((0x64).to_bytes(1, 'big')) # H.264 profile (0x64 == high)
+    w.write((0x00).to_bytes(1, 'big')) # H.264 profile compatibility
+    w.write((0x2a).to_bytes(1, 'big')) # H.264 level (0x28 == 4.0, 0x2a == 4.2)
+    w.write((0xff).to_bytes(1, 'big')) # nal unit length - 1 (upper 6 bits == 1)
+    w.write((0xe1).to_bytes(1, 'big')) # number of sps (upper 3 bits == 1)
+    w.write((len(sps)).to_bytes(2, 'big'))
+    w.write(sps)
+    w.write((1).to_bytes(1, 'big')) # number of pps
+    w.write((len(pps)).to_bytes(2, 'big'))
+    w.write(pps)
 
-# Track Extends Box
-def writeTREX(w):
-    b = io.BytesIO()
-    writeInt(b, 0, 4)          # version and flags
-    writeInt(b, 1, 4)          # track id
-    writeInt(b, 1, 4)          # default sample description index
-    writeInt(b, 0, 4)          # default sample duration
-    writeInt(b, 0, 4)          # default sample size
-    writeInt(b, 0x00010000, 4) # default sample flags
-    writeTag(w, b'trex', b)
+    w.write(STSZSIZE.to_bytes(4, 'big'))
+    w.write(b'stsz')
+    w.write((0).to_bytes(4, 'big')) # version and flags
+    w.write((0).to_bytes(4, 'big')) # sample size
+    w.write((0).to_bytes(4, 'big')) # sample count
+
+    w.write(STSCSIZE.to_bytes(4, 'big'))
+    w.write(b'stsc')
+    w.write((0).to_bytes(4, 'big')) # version and flags
+    w.write((0).to_bytes(4, 'big')) # entry count
+
+    w.write(STTSSIZE.to_bytes(4, 'big'))
+    w.write(b'stts')
+    w.write((0).to_bytes(4, 'big')) # version and flags
+    w.write((0).to_bytes(4, 'big')) # entry count
+
+    w.write(STCOSIZE.to_bytes(4, 'big'))
+    w.write(b'stco')
+    w.write((0).to_bytes(4, 'big')) # version and flags
+    w.write((0).to_bytes(4, 'big')) # entry count
+
+    # Movie Extends Box
+    w.write(MVEXSIZE.to_bytes(4, 'big'))
+    w.write(b'mvex')
+
+    # Movie Extends Header Box
+    w.write(MEHDSIZE.to_bytes(4, 'big'))
+    w.write(b'mehd')
+    w.write((0).to_bytes(4, 'big')) # version and flags
+    w.write((0).to_bytes(4, 'big')) # fragment duration
+
+    # Track Extends Box
+    w.write(TREXSIZE.to_bytes(4, 'big'))
+    w.write(b'trex')
+    w.write((0).to_bytes(4, 'big'))          # version and flags
+    w.write((1).to_bytes(4, 'big'))          # track id
+    w.write((1).to_bytes(4, 'big'))          # default sample description index
+    w.write((0).to_bytes(4, 'big'))          # default sample duration
+    w.write((0).to_bytes(4, 'big'))          # default sample size
+    w.write((0x00010000).to_bytes(4, 'big')) # default sample flags
+
 
 
 TFHDSIZE = 12 + 8

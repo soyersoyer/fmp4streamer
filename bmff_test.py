@@ -4,28 +4,32 @@ fin = open("test.h264", "rb")
 h264 = fin.read()
 fin.close()
 
-nals = h264.split(b'\00\00\00\01')
+delim = b'\00\00\00\01'
+sampletime = 333
+timescale = 24*sampletime
+
+nals = h264.split(delim)
 
 fout = open("test.mp4", "wb")
 
-bmff.writeFTYP(fout)
-bmff.writeMOOV(fout, 1280, 720)
+bmff.write_ftyp(fout)
+bmff.write_moov(fout, 1280, 720, timescale, delim, delim)
 
 seq = 1
 for k, nal in enumerate(nals):
     if len(nal) == 0:
         continue
-    nalType = nal[0] & 0x1f
-    if nalType == 5 or nalType == 1:
-        if (nalType == 5):
+    nal_type = nal[0] & 0x1f
+    if nal_type == 5 or nal_type == 1:
+        if (nal_type == 5):
             nalus = [nals[k-2], nals[k-1], nal]
-            isIDR = True
+            is_idr = True
         else:
             nalus = [nal]
-            isIDR = False
-        mdatSize = bmff.getMDATsize(nalus)
-        bmff.writeMOOF(fout, seq, mdatSize, isIDR, 333)
-        bmff.writeMDAT(fout, nalus)
+            is_idr = False
+        mdat_size = bmff.get_mdat_size(nalus)
+        bmff.write_moof(fout, seq, mdat_size, is_idr, sampletime, seq*sampletime)
+        bmff.write_mdat(fout, nalus)
         seq = seq + 1
 
 fout.close()

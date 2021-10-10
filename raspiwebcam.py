@@ -127,8 +127,8 @@ class MP4Writer:
 
     def write_header(self):
         buf = io.BytesIO()
-        bmff.writeFTYP(buf)
-        bmff.writeMOOV(buf, self.width, self.height, self.timescale, self.sps, self.pps)
+        bmff.write_ftyp(buf)
+        bmff.write_moov(buf, self.width, self.height, self.timescale, self.sps, self.pps)
         self.w.write(buf.getbuffer())
 
     def add_nalus(self, nalus):
