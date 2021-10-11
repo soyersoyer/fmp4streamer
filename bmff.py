@@ -9,9 +9,6 @@ COMPATSTRING = b"isomiso2iso5avc1mp41"
 
 # ISO/IEC 14496 Part 14 is not used.
 
-def writeInt(w, value, n):
-    w.write(value.to_bytes(n, 'big'))
-
 FTYPSIZE = 8 + len(COMPATSTRING) + 8
 def write_ftyp(w):
     w.write((FTYPSIZE).to_bytes(4, 'big'))
