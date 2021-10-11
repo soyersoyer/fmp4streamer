@@ -32,14 +32,6 @@ def get_arg(args, arg, default):
     except ValueError:
         return default
 
-def get_or(dict, value, default):
-    if value in dict:
-        return dict[value]
-    else:
-        logging.warning(f"{value} not in {dict}, using {default}")
-        return dict[default]
-
-
 width = get_arg(raspivid.args, 'width', 1920)
 height = get_arg(raspivid.args, 'height', 1080)
 framerate = get_arg(raspivid.args, 'framerate', 30)
@@ -49,9 +41,9 @@ level = get_arg(raspivid.args, 'level', '4')
 sampleduration = 500
 timescale = framerate*sampleduration
 
-profiles = {"high" : "6400", "main": "4d00", "baseline": "4200"}
-levels = {"4": "28", "4.1": "29", "4.2": "2a"}
-codec = "avc1." + get_or(profiles, profile, "high") + get_or(levels, level, "4")
+profiles = {'high' : '6400', 'main': '4d00', 'baseline': '4200'}
+levels = {'4': '28', '4.1': '29', '4.2': '2a'}
+codec = 'avc1.' + profiles.get(profile, '6400') + levels.get(level, '28')
 
 
 def get_index_html():
