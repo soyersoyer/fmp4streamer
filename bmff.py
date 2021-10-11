@@ -1,5 +1,3 @@
-import io
-
 HANDLERNAME = b"TinyStreamer"
 COMPATSTRING = b"isomiso2iso5avc1mp41"
 
@@ -313,3 +311,42 @@ def get_mdat_size(nalus):
     for nalu in nalus:
         size += 4+len(nalu)
     return size
+
+def test_h264_to_fmp4(h264file, mp4file):
+    fin = open(h264file, "rb")
+    h264 = fin.read()
+    fin.close()
+
+    delim = b'\00\00\00\01'
+    # Raspberry Pi 3B+ SPS/PPS for H.264 high 4.2
+    sps = b'\x27\x64\x00\x2a\xac\x2b\x40\x28\x02\xdd\x00\xf1\x22\x6a'
+    pps = b'\x28\xee\x02\x5c\xb0\x00'
+
+    sampletime = 333
+    timescale = 24*sampletime
+
+    nals = h264.split(delim)
+
+    fout = open(mp4file, "wb")
+
+    write_ftyp(fout)
+    write_moov(fout, 1280, 720, timescale, sps, pps)
+
+    seq = 1
+    for k, nal in enumerate(nals):
+        if len(nal) == 0:
+            continue
+        nal_type = nal[0] & 0x1f
+        if nal_type == 5 or nal_type == 1:
+            if nal_type == 5:
+                nalus = [nals[k-2], nals[k-1], nal]
+                is_idr = True
+            else:
+                nalus = [nal]
+                is_idr = False
+            mdat_size = get_mdat_size(nalus)
+            write_moof(fout, seq, mdat_size, is_idr, sampletime, seq*sampletime)
+            write_mdat(fout, nalus)
+            seq = seq + 1
+
+    fout.close()
