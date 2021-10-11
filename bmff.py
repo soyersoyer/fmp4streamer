@@ -255,7 +255,7 @@ MFHDSIZE = 8 + 8
 MOOFSIZE = MFHDSIZE + TRAFSIZE + 8
 
 # Movie Fragment Box
-def write_moof(w, seq, mdatSize, isIDR, sampleDuration, decodeTime):
+def write_moof(w, seq, mdatsize, is_idr, sampleduration, decodetime):
     w.write(MOOFSIZE.to_bytes(4, 'big'))
     w.write(b'moof')
 
@@ -280,7 +280,7 @@ def write_moof(w, seq, mdatSize, isIDR, sampleDuration, decodeTime):
     w.write((TFDTSIZE).to_bytes(4, 'big'))
     w.write(b'tfdt')
     w.write((0x01000000).to_bytes(4, 'big')) # version and flags
-    w.write(decodeTime.to_bytes(8, 'big'))    # base media decode time
+    w.write(decodetime.to_bytes(8, 'big'))    # base media decode time
 
     # Track Run Box
     w.write((TRUNSIZE).to_bytes(4, 'big'))
@@ -288,12 +288,12 @@ def write_moof(w, seq, mdatSize, isIDR, sampleDuration, decodeTime):
     w.write((0x00000305).to_bytes(4, 'big')) # version and flags
     w.write((1).to_bytes(4, 'big'))          # sample count
     w.write((0x70).to_bytes(4, 'big'))       # data offset
-    if isIDR:
+    if is_idr:
         w.write((0x02000000).to_bytes(4, 'big')) # first sample flags (i-frame)
     else:
         w.write((0x01010000).to_bytes(4, 'big')) # first sample flags (not i-frame)
-    w.write((sampleDuration).to_bytes(4, 'big'))      # sample duration
-    w.write((mdatSize - 8).to_bytes(4, 'big')) # sample size
+    w.write((sampleduration).to_bytes(4, 'big'))      # sample duration
+    w.write((mdatsize - 8).to_bytes(4, 'big')) # sample size
 
 # Media Data Box
 def write_mdat(w, nalus):
