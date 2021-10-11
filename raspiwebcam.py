@@ -247,7 +247,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                         nalus = output.nalus
                     mp4_writer.add_nalus(nalus)
             except Exception as e:
-                self.log_error(f'Removed streaming client {self.client_address} {str(e)}')
+                self.log_message(f'Removed streaming client {self.client_address} {str(e)}')
         else:
             self.send_error(404)
             self.end_headers()
