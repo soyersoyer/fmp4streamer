@@ -1,5 +1,5 @@
-HANDLERNAME = b"TinyStreamer"
-COMPATSTRING = b"isomiso2iso5avc1mp41"
+HANDLERNAME = b'TinyStreamer'
+COMPATSTRING = b'isomiso2iso5avc1mp41'
 
 # functions unrolled to minimize function calls, because they are very slow in python
 
@@ -310,7 +310,7 @@ def get_mdat_size(nalus):
     return size
 
 def test_h264_to_fmp4(h264file, mp4file):
-    fin = open(h264file, "rb")
+    fin = open(h264file, 'rb')
     h264 = fin.read()
     fin.close()
 
@@ -324,7 +324,7 @@ def test_h264_to_fmp4(h264file, mp4file):
 
     nals = h264.split(delim)
 
-    fout = open(mp4file, "wb")
+    fout = open(mp4file, 'wb')
 
     write_ftyp(fout)
     write_moov(fout, 1280, 720, timescale, sps, pps)

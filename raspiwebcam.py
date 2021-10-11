@@ -27,7 +27,7 @@ raspivid = Popen([
 
 def get_arg(args, arg, default):
     try:
-        pos = args.index("--" + arg)
+        pos = args.index('--' + arg)
         return type(default)(args[pos + 1])
     except ValueError:
         return default
@@ -47,7 +47,7 @@ codec = 'avc1.' + profiles.get(profile, '6400') + levels.get(level, '28')
 
 
 def get_index_html():
-    return f"""<!doctype html>
+    return f'''<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -68,22 +68,22 @@ body {{ margin:0; padding:0; background-color:#303030; }}
   </video>
 </body>
 </html>
-""".encode('utf-8')
+'''.encode('utf-8')
 
 def get_stream_m3u8():
-    return f"""#EXTM3U
+    return f'''#EXTM3U
 #EXT-X-STREAM-INF:BANDWIDTH=150000,RESOLUTION={width}x{height},CODECS="{codec}"
 streaminf.m3u8
-""".encode('utf-8')
+'''.encode('utf-8')
 
 def get_streaminf_m3u8():
-    return f"""#EXTM3U
+    return f'''#EXTM3U
 #EXT-X-TARGETDURATION:49057
 #EXT-X-VERSION:4
 #EXTINF:49057.00,
 stream.mp4?{int(time())}
 #EXT-X-ENDLIST
-""".encode('utf-8')
+'''.encode('utf-8')
 
 
 class H264NALU:
@@ -115,7 +115,7 @@ class MP4Writer:
         self.write_header()
 
         if not self.sps or not self.pps:
-            raise ValueError("MP4Writer: sps, pps NALUs are missing!")
+            raise ValueError('MP4Writer: sps, pps NALUs are missing!')
 
     def write_header(self):
         buf = io.BytesIO()
@@ -183,7 +183,7 @@ class StreamBuffer(object):
                 if H264NALU.get_type(nalus[1]) == H264NALU.PPSTYPE:
                     self.pps = nalus[1]
             if not self.sps or not self.pps:
-                logging.warning("StreamBuffer: can't read SPS and PPS from the first NALUs")
+                logging.warning('StreamBuffer: can\'t read SPS and PPS from the first NALUs')
             self.juststarted = False
 
 
