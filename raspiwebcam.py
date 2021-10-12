@@ -100,6 +100,9 @@ class H264NALU:
 
 class MP4Writer:
     def __init__(self, w, width, height, timescale, sampleduration, sps, pps):
+        if not sps or not pps:
+            raise ValueError('MP4Writer: sps, pps NALUs are missing!')
+
         self.seq = 1
         self.sps = sps
         self.pps = pps
@@ -114,8 +117,6 @@ class MP4Writer:
 
         self.write_header()
 
-        if not self.sps or not self.pps:
-            raise ValueError('MP4Writer: sps, pps NALUs are missing!')
 
     def write_header(self):
         buf = io.BytesIO()
