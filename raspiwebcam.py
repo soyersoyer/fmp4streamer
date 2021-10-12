@@ -114,6 +114,8 @@ class MP4Writer:
         self.height = height
         self.timescale = timescale
         self.sampleduration = sampleduration
+        self.decodetime = 0
+        self.prevtime = 0
 
         self.write_header()
 
@@ -140,13 +142,22 @@ class MP4Writer:
     def write_frame(self, nalus, is_idr):
         if self.start == None:
             self.start = time()
+            curtime = 0
+            sampleduration = self.sampleduration
+        else:
+            curtime = round((time() - self.start) * timescale)
+            sampleduration = curtime - self.prevtime
+        
+        self.prevtime = curtime
+
         mdatsize = bmff.get_mdat_size(nalus)
         self.framebuf.seek(0)
-        decodetime = int((time() - self.start) * timescale)
-        bmff.write_moof(self.framebuf, self.seq, mdatsize, is_idr, self.sampleduration, decodetime)
+        bmff.write_moof(self.framebuf, self.seq, mdatsize, is_idr, sampleduration, self.decodetime)
         bmff.write_mdat(self.framebuf, nalus)
-        self.seq = self.seq + 1
         self.w.write(self.framebuf.getbuffer()[:bmff.MOOFSIZE + mdatsize])
+        
+        self.seq += 1
+        self.decodetime += sampleduration
 
 
 
