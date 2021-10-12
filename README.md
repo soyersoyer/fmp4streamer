@@ -44,15 +44,15 @@ This python script runs a [raspivid](https://www.raspberrypi.org/documentation/a
     ```
 
 # Viewing
-When raspiwebcam.py is running the feed can be viewed from any browser via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_serverPort_** (default: 8000) is the port you set in the configuration section.
+When raspiwebcam.py is running the feed can be viewed from any browser via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_server_port_** (default: 8000) is the port you set in the configuration section.
 The viewing screen
     ```
-    http://<rpi_address>:<serverPort>/
+    http://<rpi_address>:<server_port>/
     ```
 
 # Configuration
 Open raspiwebcam.py and edit the following section of code as needed. 
-- The webserver will run on the port you set **_serverPort_** to.  
+- The webserver will run on the port you set **_server_port_** to.  
 - Refer to the [raspivid documentation](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) for details on how to configure it. A lage number of options exist (far more than listed below), that allow for 100% customization of camera. 
     ```sh
     $ raspivid | less
@@ -75,6 +75,6 @@ raspivid = Popen([
     '--nopreview',
     '--timeout', '0',
     '--output', '-'],
-    stdout=PIPE, bufsize=65536)
+    stdout=PIPE, bufsize=0)
 # end configuration
 ```
