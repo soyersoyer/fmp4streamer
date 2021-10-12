@@ -1,3 +1,5 @@
+from struct import pack
+
 HANDLERNAME = b'TinyStreamer'
 COMPATSTRING = b'isomiso2iso5avc1mp41'
 
@@ -256,44 +258,71 @@ MOOFSIZE = MFHDSIZE + TRAFSIZE + 8
 
 # Movie Fragment Box
 def write_moof(w, seq, mdatsize, is_idr, sampleduration, decodetime):
-    w.write(MOOFSIZE.to_bytes(4, 'big'))
-    w.write(b'moof')
+    w.write(pack(">20s i 40s Q 20s 4s i i",
+b'\x00\x00\x00\x68\
+moof\
+\x00\x00\x00\x10\
+mfhd\
+\x00\x00\x00\x00',
+    seq,
+b'\x00\x00\x00\x50\
+traf\
+\x00\x00\x00\x14\
+tfhd\
+\x00\x02\x00\x20\
+\x00\x00\x00\x01\
+\x01\x01\x00\x00\
+\x00\x00\x00\x14\
+tfdt\
+\x01\x00\x00\x00',
+    decodetime,
+b'\x00\x00\x00\x20\
+trun\
+\x00\x00\x03\x05\
+\x00\x00\x00\x01\
+\x00\x00\x00\x70',
+    (b'\x02\x00\x00\x00' if is_idr else b'\x01\x01\x00\x00'),
+    sampleduration,
+    (mdatsize - 8)))
 
-    # Movie Fragment Header Box
-    w.write(MFHDSIZE.to_bytes(4, 'big'))
-    w.write(b'mfhd')
-    w.write((0).to_bytes(4, 'big'))   # version and flags
-    w.write((seq).to_bytes(4, 'big')) # sequence number
-
-    # Track Fragment Box
-    w.write((TRAFSIZE).to_bytes(4, 'big'))
-    w.write(b'traf')
-    
-    # Track Fragment Header Box
-    w.write((TFHDSIZE).to_bytes(4, 'big'))
-    w.write(b'tfhd')
-    w.write((0x020020).to_bytes(4, 'big'))   # version and flags
-    w.write((1).to_bytes(4, 'big'))          # track ID
-    w.write((0x01010000).to_bytes(4, 'big')) # default sample flags
-
-    # Track Fragment Base Media Decode Time Box
-    w.write((TFDTSIZE).to_bytes(4, 'big'))
-    w.write(b'tfdt')
-    w.write((0x01000000).to_bytes(4, 'big')) # version and flags
-    w.write(decodetime.to_bytes(8, 'big'))    # base media decode time
-
-    # Track Run Box
-    w.write((TRUNSIZE).to_bytes(4, 'big'))
-    w.write(b'trun')
-    w.write((0x00000305).to_bytes(4, 'big')) # version and flags
-    w.write((1).to_bytes(4, 'big'))          # sample count
-    w.write((0x70).to_bytes(4, 'big'))       # data offset
-    if is_idr:
-        w.write((0x02000000).to_bytes(4, 'big')) # first sample flags (i-frame)
-    else:
-        w.write((0x01010000).to_bytes(4, 'big')) # first sample flags (not i-frame)
-    w.write((sampleduration).to_bytes(4, 'big'))      # sample duration
-    w.write((mdatsize - 8).to_bytes(4, 'big')) # sample size
+#    w.write(MOOFSIZE.to_bytes(4, 'big'))
+#    w.write(b'moof')
+#
+#    # Movie Fragment Header Box
+#    w.write(MFHDSIZE.to_bytes(4, 'big'))
+#    w.write(b'mfhd')
+#    w.write((0).to_bytes(4, 'big'))   # version and flags
+#    w.write((seq).to_bytes(4, 'big')) # sequence number
+#
+#    # Track Fragment Box
+#    w.write((TRAFSIZE).to_bytes(4, 'big'))
+#    w.write(b'traf')
+#    
+#    # Track Fragment Header Box
+#    w.write((TFHDSIZE).to_bytes(4, 'big'))
+#    w.write(b'tfhd')
+#    w.write((0x020020).to_bytes(4, 'big'))   # version and flags
+#    w.write((1).to_bytes(4, 'big'))          # track ID
+#    w.write((0x01010000).to_bytes(4, 'big')) # default sample flags
+#
+#    # Track Fragment Base Media Decode Time Box
+#    w.write((TFDTSIZE).to_bytes(4, 'big'))
+#    w.write(b'tfdt')
+#    w.write((0x01000000).to_bytes(4, 'big')) # version and flags
+#    w.write(decodetime.to_bytes(8, 'big'))    # base media decode time
+#
+#    # Track Run Box
+#    w.write((TRUNSIZE).to_bytes(4, 'big'))
+#    w.write(b'trun')
+#    w.write((0x00000305).to_bytes(4, 'big')) # version and flags
+#    w.write((1).to_bytes(4, 'big'))          # sample count
+#    w.write((0x70).to_bytes(4, 'big'))       # data offset
+#    if is_idr:
+#        w.write((0x02000000).to_bytes(4, 'big')) # first sample flags (i-frame)
+#    else:
+#        w.write((0x01010000).to_bytes(4, 'big')) # first sample flags (not i-frame)
+#    w.write((sampleduration).to_bytes(4, 'big'))      # sample duration
+#    w.write((mdatsize - 8).to_bytes(4, 'big')) # sample size
 
 # Media Data Box
 def write_mdat(w, nalus):
