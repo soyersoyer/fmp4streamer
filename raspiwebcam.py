@@ -22,7 +22,7 @@ raspivid = Popen([
     '--nopreview',
     '--timeout', '0',
     '--output', '-'],
-    stdout=PIPE, bufsize=65536)
+    stdout=PIPE, bufsize=0)
 # end configuration
 
 def get_arg(args, arg, default):
@@ -158,7 +158,7 @@ class CameraThread(Thread):
 
     def run(self):
         while self.raspivid.poll() is None:
-            buf = self.raspivid.stdout.read1()
+            buf = self.raspivid.stdout.read(65536)
             self.streambuffer.write(buf)
 
 class StreamBuffer(object):
