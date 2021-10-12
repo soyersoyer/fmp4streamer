@@ -103,7 +103,7 @@ class MP4Writer:
         if not sps or not pps:
             raise ValueError('MP4Writer: sps, pps NALUs are missing!')
 
-        self.seq = 1
+        self.seq = 0
         self.sps = sps
         self.pps = pps
         self.start = None
@@ -129,7 +129,7 @@ class MP4Writer:
             nalutype = H264NALU.get_type(nalu)
 
             # our first frame should have SPS, PPS, IDR NALU, so wait until we have an IDR
-            if self.seq == 1 and nalutype != H264NALU.IDRTYPE:
+            if self.seq == 0 and nalutype != H264NALU.IDRTYPE:
                 continue
 
             if nalutype == H264NALU.IDRTYPE:
