@@ -258,7 +258,7 @@ MOOFSIZE = MFHDSIZE + TRAFSIZE + 8
 
 # Movie Fragment Box
 def write_moof(w, seq, mdatsize, is_idr, sampleduration, decodetime):
-    w.write(pack(">20s i 40s Q 20s 4s i i",
+    w.write(pack(">20s I 40s Q 20s 4s I I",
 b'\x00\x00\x00\x68\
 moof\
 \x00\x00\x00\x10\
