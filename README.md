@@ -1,4 +1,13 @@
 # RaspiWebCam
+|
+[What is RaspiWebCam](#what-is-raspiwebcam) |
+[How does it work](#how-does-it-work) |
+[Capabilities](#capabilities) |
+[Installation](#installation) |
+[Running](#running) |
+[Viewing](#viewing) |
+[Configuration](#configuration) |
+[Motivation](#motivation) |
 
 # What is RaspiWebCam
 RaspiWebCam is a simple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser.
@@ -6,7 +15,7 @@ RaspiWebCam is a simple Python application designed to stream hardware encoded h
 # How does it work
 This python script runs a [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) in the background, reads the h264 stream from it, adds some fMP4 (fragmented MP4) header and serves it via HTTP. It works with only one html5 video tag, no js needed. It's pretty lightweight.
 
-# Capabillities
+# Capabilities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
 - Support any resolution and framerate the camera module can capture and the gpu can encode 
 - Able to do both of the preceding from any Raspberry Pi
