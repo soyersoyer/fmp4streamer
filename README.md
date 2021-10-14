@@ -8,6 +8,7 @@
 [Viewing](#viewing) |
 [Configuration](#configuration) |
 [Motivation](#motivation) |
+[Changelog](https://github.com/soyersoyer/raspiwebcam/blob/main/CHANGELOG.md) |
 
 # What is RaspiWebCam
 RaspiWebCam is a simple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser.
@@ -160,7 +161,7 @@ After this operation, 1,800 kB of additional disk space will be used.
 ```
 It's for the websocket server, not too big but do we really need websockets? No, simple http is enough for streaming to browsers.
 
-[jmuxer](https://github.com/samirkumardas/jmuxer)
+[samirkumardas/jmuxer](https://github.com/samirkumardas/jmuxer)
 
 Why do we want to add mp4 headers to h264 with js in the browser? If we want to do it properly we have to send timing information next to h264 too, but what should be the format, custom encoding or protobuf? Or wait, there is already a format for that, I remember it, the mp4! So it should be done on the server side.
 
