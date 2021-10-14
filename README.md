@@ -96,7 +96,7 @@ I wanted to stream my raspberry camera to the browser. I found some solution, bu
 ## MJPEG streamers
 We have h264, why do we want to stream mjpeg?
 
-## VLC, Gstreamer
+## VLC, Gstreamer, FFmpeg
 ```
 apt install vlc
 ...
@@ -113,13 +113,22 @@ Need to get 51.5 MB of archives.
 After this operation, 633 MB of additional disk space will be used.
 ```
 
+```
+apt install ffmpeg
+...
+0 upgraded, 149 newly installed, 0 to remove and 0 not upgraded.
+Need to get 69.3 MB of archives.
+After this operation, 714 MB of additional disk space will be used.
+```
+
+
 These are huge. It's bad because lot of binary contains a lot of security bugs and you have to update these packages too in your project lifetime, not just install them in one time.
 
 ## [U4VL](https://www.linux-projects.org/uv4l/)
 You have to add a custom apt repository to your pi to install, you have to trust these guys. It has closed source components too. So no way.
 
 ## [131/h264-live-player](https://github.com/131/h264-live-player)
-It uses a baseline javascript h264 encoder. We have better h264 encoders in our hardwares, so why do we want to use a javascript encoder?
+It uses a baseline javascript h264 decoder. We have better h264 decoders in our hardwares, so why do we want to use a javascript decoder?
 
 ## [dans98/pi-h264-to-browser](https://github.com/dans98/pi-h264-to-browser)
 I like it, it's good, but I don't like its dependencies
