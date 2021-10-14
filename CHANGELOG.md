@@ -45,11 +45,12 @@
 - Raspiwebcam is the new project name.
 
 ### Added
-- Use raspicam instead of python3-picamera
+- Use raspivid instead of python3-picamera
 - Use Fetch api instead of websockets
 ### Changed
 - Use jmuxer 2.0.2
 ### Removed
 - Removed unnecessary screens
+- Removed python3-picamera dependency
 - Removed python3-tornado dependency
 
