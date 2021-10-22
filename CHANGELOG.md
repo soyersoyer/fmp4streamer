@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [3.0.1] - 2021-10-23
+### Fixed
+- Fixed sampleduration calculation
+- Default config shouldn't set h264 profile and level
+
 ## [3.0.0] - 2021-10-22
 ### Added
 - Use V4L2 instead of the raspivid, because reading from pipe is slow with big frames
