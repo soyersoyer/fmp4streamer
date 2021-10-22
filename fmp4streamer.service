@@ -1,10 +1,10 @@
 [Unit]
-Description=RaspiWebCam
+Description=fmp4streamer
 After=network.target
 [Service]
-ExecStart=python3 raspiwebcam.py
+ExecStart=python3 fmp4streamer.py
 Restart=always
 Environment=PATH=/usr/bin:/usr/local/bin:/bin
-WorkingDirectory=/home/pi/raspiwebcam
+WorkingDirectory=/home/pi/fmp4streamer
 [Install]
 WantedBy=default.target

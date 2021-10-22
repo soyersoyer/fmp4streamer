@@ -1,96 +1,101 @@
-# RaspiWebCam
-[What is RaspiWebCam](#what-is-raspiwebcam) |
+# fmp4streamer
+[What is fmp4streamer](#what-is-fmp4streamer) |
 [How does it work](#how-does-it-work) |
 [Capabilities](#capabilities) |
 [Installation](#installation) |
 [Running](#running) |
 [Viewing](#viewing) |
 [Configuration](#configuration) |
+[Roadmap](#roadmap) |
 [Motivation](#motivation) |
-[Changelog](https://github.com/soyersoyer/raspiwebcam/blob/main/CHANGELOG.md)
+[Changelog](https://github.com/soyersoyer/fmp4streamer/blob/main/CHANGELOG.md)
 
-# What is RaspiWebCam
-RaspiWebCam is a simple Python application designed to stream hardware encoded h.264 from a Raspberry Pi equiped with a V1, V2, or HQ camera module, directly to a browser.
+# What is fmp4streamer
+The fmp4streamer is a simple Python application designed to stream hardware encoded H.264 from a V4L2 Linux video device directly to a browser.
 
 # How does it work
-This python script runs a [raspivid](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) in the background, reads the h264 stream from it, adds some fMP4 (fragmented MP4) header and serves it via HTTP. It works with only one html5 video tag, no js needed. It's pretty lightweight.
+This python script setups the V4L2 device, reads the h264 stream from it, adds some fMP4 (fragmented MP4) header and serves it via HTTP. It works with only one html5 video tag, no js needed. It's pretty lightweight.
 
 # Capabilities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
-- Support any resolution and framerate the camera module can capture and the gpu can encode 
-- Able to do both of the preceding from any Raspberry Pi
+- Support any resolution and framerate the video device can capture
+- Works in any Raspberry Pi with a camera module
 - Able to handle high framerate (60-90 fps) streams
 - Able to stream to iPhone and Safari via HLS.
 
 # Installation
-1. [Ensure the camera module is properly connected to the Raspberry Pi](https://projects.raspberrypi.org/en/projects/getting-started-with-picamera/2)
-1. [Ensure the operating system is up to date, and the camera interface is enabled](https://www.raspberrypi.org/documentation/configuration/camera.md)
-1. Download
    ```
-   wget https://github.com/soyersoyer/raspiwebcam/archive/refs/tags/v2.2.1.zip
-   unzip v2.2.1.zip
-   mv raspiwebcam-2.2.1 raspiwebcam
+   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.0.0.zip
+   unzip v3.0.0.zip
+   mv fmp4streamer-3.0.0 fmp4streamer
    ```
 
 # Running 
 - from the terminal
     ```
-    cd raspiwebcam
-    python3 raspiwebcam.py
+    cd fmp4streamer
+    python3 fmp4streamer.py
     ```
 - at startup
     ```
-    cd raspiwebcam
+    cd fmp4streamer
     mkdir -p ~/.config/systemd/user
-    cp raspiwebcam.service ~/.config/systemd/user/
-    systemctl --user enable raspiwebcam
-    systemctl --user start raspiwebcam
+    cp fmp4streamer.service ~/.config/systemd/user/
+    systemctl --user enable fmp4streamer
+    systemctl --user start fmp4streamer
     loginctl enable-linger pi
     ```
 
     watch the logs
     ```
-    systemctl --user status raspiwebcam
-    journalctl --user-unit raspiwebcam
+    systemctl --user status fmp4streamer
+    journalctl --user-unit fmp4streamer
     ```
 
 # Viewing
-When raspiwebcam.py is running the feed can be viewed from any browser via the following urls. **_rpi_address_** is the ip address or hostname of your Raspberry Pi, and **_server_port_** (default: 8000) is the port you set in the configuration section.
+When fmp4streamer.py is running the feed can be viewed from any browser via the following urls. **_ip_address_** is the ip address or hostname of your computer, and **_port_** (default: 8000) is the port you set in the configuration section.
 The viewing screen
     ```
-    http://<rpi_address>:<server_port>/
+    http://<ip_address>:<port>/
     ```
 
 # Configuration
-Open raspiwebcam.py and edit the following section of code as needed. 
-- The webserver will run on the port you set **_server_port_** to.  
-- Refer to the [raspivid documentation](https://www.raspberrypi.org/documentation/accessories/camera.html#raspivid-2) for details on how to configure it. A lage number of options exist (far more than listed below), that allow for 100% customization of camera. 
-    ```sh
-    $ raspivid | less
-    ```
 
-```python
-# start configuration
-server_port = 8000
+You can start with the fmp4streamer.conf.dist:
 
-raspivid = Popen([
-    'raspivid',
-    '--width', '800',
-    '--height', '600',
-    '--framerate', '30',
-    '--intra', '15',
-    '--qp', '20',
-    '--irefresh', 'both',
-    '--level', '4.2',
-    '--profile', 'high',
-    '--nopreview',
-    '--timeout', '0',
-    '--output', '-'],
-    stdout=PIPE, bufsize=0)
-# end configuration
 ```
-# Motivation
+cp fmp4streamer.conf.dist fmp4streamer.conf
+```
 
+Which contains:
+```ini
+[server]
+listen = 
+port = 8000
+
+[/dev/video0]
+width = 800
+height = 600
+fps = 30
+# you can set any V4L2 control too, list them with the -l option
+h264_profile = High
+h264_level = 4.2
+h264_i_frame_period = 15
+```
+
+You can set all the V4L2 controls via the configuration file. List them with
+```
+python3 fmp4streamer.py -l
+```
+
+# Roadmap
+- [x] Use V4L2 instead of raspivid
+- [ ] Adding AAC audio to the stream from ALSA/PipeWire
+- [ ] Support multiple cameras
+- [ ] Rewrite to c or Rust
+
+
+# Motivation
 I wanted to stream my raspberry camera to the browser. I found some solution, but I think they are not optimal or too heavy.
 
 ## MJPEG streamers
@@ -172,11 +177,11 @@ It could be good, but safari on iOS doesn't support it... and why do we need jav
 
 It inspired me, I like it very much, it's simple and minimal, but it uses websockets and the Media Source Extensions...
 
-## raspiwebcam
+## fmp4streamer (formerly RaspiWebCam)
 
 So here we are.
 
-It doesn't have any dependencies other than python and raspivid, but they are installed by default.
+It doesn't have any dependencies other than python and V4L2, but they are installed by default.
 
 It adds fMP4 (fragmented MP4) headers to the h264 stream. It uses the python http server to serve it to the browser.
 

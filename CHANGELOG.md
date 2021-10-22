@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [3.0.0] - 2021-10-22
+### Added
+- Use V4L2 instead of the raspivid, because reading from pipe is slow with big frames
+- Config file with ability to set v4l2 parameters
+### Changed
+- RaspiWebcam has been renamed fmp4streamer, because with V4L2 it works on other linux machines too 
+
 ## [2.2.1] - 2021-10-13
 ### Changed
 - Better duration and decode time calculation
