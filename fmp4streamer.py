@@ -192,8 +192,6 @@ class Config(configparser.ConfigParser):
             'width': 800,
             'height': 600,
             'fps': 30,
-            'h264_level': '4',
-            'h264_profile': 'High',
         })
         self.read_dict({'server': {'listen': '', 'port': 8000}})
 
@@ -227,10 +225,10 @@ class Config(configparser.ConfigParser):
         return self.fps() * self.sampleduration()
 
     def h264_profile(self):
-        return self[self.device]['h264_profile']
+        return self[self.device].get('h264_profile', 'High')
 
     def h264_level(self):
-        return self[self.device]['h264_level']
+        return self[self.device].get('h264_level', '4')
 
     def codec(self):
         profiles = {'High' : '6400', 'Main': '4d00', 'Baseline': '4200'}
