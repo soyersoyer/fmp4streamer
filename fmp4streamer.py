@@ -1,11 +1,10 @@
 import io, socketserver, logging, configparser, getopt, sys
-from subprocess import Popen, PIPE
-from threading import Thread, Condition
+from threading import Thread
 from http import server
 from time import time
 
 import bmff
-from v4l2camera import V4L2Camera
+from v4l2camera import V4L2Camera, H264NALU
 
 def get_index_html(codec):
     return f'''<!doctype html>
@@ -46,18 +45,6 @@ stream.mp4?{int(time())}
 #EXT-X-ENDLIST
 '''.encode('utf-8')
 
-
-class H264NALU:
-    DELIMITER = b'\x00\x00\x00\x01'
-
-    NONIDRTYPE = 1
-    IDRTYPE = 5
-    SPSTYPE = 7
-    PPSTYPE = 8
-
-    @staticmethod
-    def get_type(nalubytes):
-        return nalubytes[0] & 0x1f
 
 class MP4Writer:
     def __init__(self, w, width, height, timescale, sampleduration, sps, pps):
