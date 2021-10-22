@@ -63,7 +63,7 @@ class MP4Writer:
         self.width = width
         self.height = height
         self.timescale = timescale
-        self.timescaleusec = 1000000 // timescale
+        self.timescaleusec = 1000000 / timescale
         self.sampleduration = sampleduration
         self.decodetime = 0
         self.prevtime = 0
@@ -93,7 +93,7 @@ class MP4Writer:
         if self.seq == 0:
             sampleduration = self.sampleduration
         else:
-            sampleduration = ((frame_secs-self.prev_secs)*1000000 + (frame_usecs-self.prev_usecs)) // self.timescaleusec
+            sampleduration = int(((frame_secs-self.prev_secs)*1000000 + (frame_usecs-self.prev_usecs)) / self.timescaleusec)
         
         self.prev_secs = frame_secs
         self.prev_usecs = frame_usecs
