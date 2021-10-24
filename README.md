@@ -11,7 +11,7 @@
 [Changelog](https://github.com/soyersoyer/fmp4streamer/blob/main/CHANGELOG.md)
 
 # What is fmp4streamer
-The fmp4streamer is a simple Python application designed to stream hardware encoded H.264 from a V4L2 Linux video device directly to a browser.
+The fmp4streamer is a Python application designed to stream hardware encoded H.264 from a V4L2 Linux video device directly to a browser.
 
 # How does it work
 This python script setups the V4L2 device, reads the h264 stream from it, adds some fMP4 (fragmented MP4) header and serves it via HTTP. It works with only one html5 video tag, no js needed. It's pretty lightweight.
