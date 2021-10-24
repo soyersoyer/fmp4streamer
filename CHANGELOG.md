@@ -1,6 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+## [3.0.2] - 2021-10-24
+### Fixed
+- Better sampleduration calculation
+### Added
+- Requesting keyframe at new connections for faster startup
 
 ## [3.0.1] - 2021-10-23
 ### Fixed
