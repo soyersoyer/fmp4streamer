@@ -149,6 +149,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.end_headers()
             try:
                 mp4_writer = MP4Writer(self.wfile, config.width(), config.height(), config.timescale(), config.sampleduration(), camera.sps, camera.pps)
+                camera.request_key_frame()
                 while True:
                     with camera.condition:
                         camera.condition.wait()

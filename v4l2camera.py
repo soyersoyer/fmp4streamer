@@ -137,7 +137,8 @@ class V4L2Camera(object):
                 ioctl(self.fd, v4l2.VIDIOC_QUERYCTRL, qctrl)
             except:
                 break
-            if qctrl.type != v4l2.V4L2_CTRL_TYPE_CTRL_CLASS:
+            if qctrl.type in [v4l2.V4L2_CTRL_TYPE_INTEGER, v4l2.V4L2_CTRL_TYPE_BOOLEAN,
+                v4l2.V4L2_CTRL_TYPE_MENU,v4l2.V4L2_CTRL_TYPE_INTEGER_MENU]:
 
                 try:
                     ctrl = v4l2.v4l2_control(qctrl.id)
@@ -147,7 +148,7 @@ class V4L2Camera(object):
                     logging.warning(f'Can\'t get ctrl {qctrl.name} value')
 
                 qctrl.name = qctrl.name.lower().translate(strtrans, delete = b',&(.)').replace(b'__', b'_')
-                if qctrl.type == v4l2.V4L2_CTRL_TYPE_MENU or qctrl.type == v4l2.V4L2_CTRL_TYPE_INTEGER_MENU:
+                if qctrl.type in [v4l2.V4L2_CTRL_TYPE_MENU, v4l2.V4L2_CTRL_TYPE_INTEGER_MENU]:
                     qctrl.menus = []
                     for i in range(qctrl.minimum, qctrl.maximum + 1):
                         try:
@@ -170,7 +171,7 @@ class V4L2Camera(object):
                 print('\n\n' + str(c.name, 'utf-8')+'\n')
             else:
                 print(str(c.name, 'utf-8'), end = ' = ')
-                if c.type == v4l2.V4L2_CTRL_TYPE_MENU or c.type == v4l2.V4L2_CTRL_TYPE_INTEGER_MENU:
+                if c.type in [v4l2.V4L2_CTRL_TYPE_MENU, v4l2.V4L2_CTRL_TYPE_INTEGER_MENU]:
                     defmenu = None
                     valmenu = None
                     for m in c.menus:
@@ -187,11 +188,13 @@ class V4L2Camera(object):
                         print('%a' % (str(m.name, 'utf-8') if c.type == v4l2.V4L2_CTRL_TYPE_MENU else m.value),
                             end = ' ')
                     print(')')
-                else:
+                elif c.type in [v4l2.V4L2_CTRL_TYPE_INTEGER, v4l2.V4L2_CTRL_TYPE_BOOLEAN]:
                     print('%a\t(' % c.value, 'default:', c.default, 'min:', c.minimum, 'max:', c.maximum, end = '')
                     if c.step != 1:
                         print(' step:', c.step, end = '')
                     print(')')
+                else:
+                    print()
 
     def init_mmap(self):
         req = v4l2.v4l2_requestbuffers()
@@ -221,6 +224,12 @@ class V4L2Camera(object):
             buf.buffer = mmap.mmap(self.fd, buf.length, mmap.PROT_READ, mmap.MAP_SHARED, offset=buf.m.offset)
             self.buffers.append(buf)
 
+    def request_key_frame(self):
+        try:
+            ctrl = v4l2.v4l2_control(v4l2.V4L2_CID_MPEG_VIDEO_FORCE_KEY_FRAME, 0)
+            ioctl(self.fd, v4l2.VIDIOC_S_CTRL, ctrl)
+        except:
+            logging.warning(f'Can\'t request keyframe')
 
     def read_header(self, buf):
         data = buf.buffer.read(buf.bytesused)
