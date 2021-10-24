@@ -93,7 +93,7 @@ class MP4Writer:
         if self.seq == 0:
             sampleduration = self.sampleduration
         else:
-            sampleduration = int(((frame_secs-self.prev_secs)*1000000 + (frame_usecs-self.prev_usecs)) / self.timescaleusec)
+            sampleduration = round(((frame_secs-self.prev_secs)*1000000 + (frame_usecs-self.prev_usecs)) / self.timescaleusec)
         
         self.prev_secs = frame_secs
         self.prev_usecs = frame_usecs
