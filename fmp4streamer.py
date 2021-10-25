@@ -47,15 +47,15 @@ stream.mp4?{int(time())}
 
 
 class MP4Writer:
-    def __init__(self, w, width, height, timescale, sampleduration, sps, pps):
+    def __init__(self, w, width, height, timescale, sps, pps):
         if not sps or not pps:
             raise ValueError('MP4Writer: sps, pps NALUs are missing!')
 
         self.seq = 0
         self.sps = sps
         self.pps = pps
-        self.prev_secs = 0
-        self.prev_usecs = 0
+        self.start_secs = 0
+        self.start_usecs = 0
 
         self.framebuf = io.BytesIO()
 
@@ -63,8 +63,7 @@ class MP4Writer:
         self.width = width
         self.height = height
         self.timescale = timescale
-        self.timescaleusec = 1000000 / timescale
-        self.sampleduration = sampleduration
+        self.timescaleusec = timescale / 1000000
         self.decodetime = 0
         self.prevtime = 0
 
@@ -91,12 +90,14 @@ class MP4Writer:
 
     def write_frame(self, nalus, frame_secs, frame_usecs, is_idr):
         if self.seq == 0:
-            sampleduration = self.sampleduration
+            self.start_secs = frame_secs
+            self.start_usecs = frame_usecs
+            sampleduration = 1
         else:
-            sampleduration = round(((frame_secs-self.prev_secs)*1000000 + (frame_usecs-self.prev_usecs)) / self.timescaleusec)
-        
-        self.prev_secs = frame_secs
-        self.prev_usecs = frame_usecs
+            sampleduration = round(
+                (frame_secs - self.start_secs) * self.timescale +
+                (frame_usecs - self.start_usecs) * self.timescaleusec -
+                self.decodetime)
 
         mdatsize = bmff.get_mdat_size(nalus)
         self.framebuf.seek(0)
@@ -148,7 +149,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Content-Type', f'video/mp4; codecs="{config.codec()}"')
             self.end_headers()
             try:
-                mp4_writer = MP4Writer(self.wfile, config.width(), config.height(), config.timescale(), config.sampleduration(), camera.sps, camera.pps)
+                mp4_writer = MP4Writer(self.wfile, config.width(), config.height(), config.timescale(), camera.sps, camera.pps)
                 camera.request_key_frame()
                 while True:
                     with camera.condition:
