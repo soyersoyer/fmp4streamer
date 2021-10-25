@@ -1,6 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [3.0.3] - 2021-10-25
+### Fixed
+- Eliminate the rounding errors in sampleduration calculation
+
 ## [3.0.2] - 2021-10-24
 ### Fixed
 - Better sampleduration calculation
