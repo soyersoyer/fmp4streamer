@@ -53,11 +53,16 @@ This python script setups the V4L2 device, reads the h264 stream from it, adds s
     ```
 
 # Viewing
-When fmp4streamer.py is running the feed can be viewed from any browser via the following urls. **_ip_address_** is the ip address or hostname of your computer, and **_port_** (default: 8000) is the port you set in the configuration section.
-The viewing screen
-    ```
-    http://<ip_address>:<port>/
-    ```
+When fmp4streamer.py is running the stream can be viewed from any browser via the following url. **_ip_address_** is the ip address or hostname of your computer, and **_port_** (default: 8000) is the port you set in the configuration section.
+```
+http://<ip_address>:<port>/
+```
+  
+If you want to view the stream via your favourite media player, you can use the
+```
+http://<ip_address>:<port>/stream.mp4
+```
+url.
 
 # Configuration
 
@@ -90,7 +95,7 @@ python3 fmp4streamer.py -l
 
 # Roadmap
 - [x] Use V4L2 instead of raspivid
-- [ ] Adding AAC audio to the stream from ALSA/PipeWire
+- [ ] Adding AAC audio to the stream from ALSA
 - [ ] Support multiple cameras
 - [ ] Rewrite to c or Rust
 
