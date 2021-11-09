@@ -19,7 +19,7 @@ This python script setups the V4L2 device, reads the h264 stream from it, adds s
 # Capabilities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
 - Support any resolution and framerate the video device can capture
-- Works in any Raspberry Pi with a camera module
+- Works in any Raspberry Pi with a camera module (If you are using the Raspberry OS Bullseye version please use the [old camera stack](https://forums.raspberrypi.com/viewtopic.php?t=323390) )
 - Able to handle high framerate (60-90 fps) streams
 - Able to stream to iPhone and Safari via HLS.
 
@@ -95,6 +95,7 @@ python3 fmp4streamer.py -l
 
 # Roadmap
 - [x] Use V4L2 instead of raspivid
+- [ ] Use V4L2 H264 encoder if the camera doesn't have H264 capability
 - [ ] Adding AAC audio to the stream from ALSA
 - [ ] Support multiple cameras
 - [ ] Rewrite to c or Rust
