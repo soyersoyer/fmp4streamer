@@ -22,6 +22,7 @@ This python script setups the V4L2 device, reads the h264 stream from it, adds s
 - Works in any Raspberry Pi with a camera module (If you are using the Raspberry OS Bullseye version please use the [old camera stack](https://forums.raspberrypi.com/viewtopic.php?t=323390) )
 - Able to handle high framerate (60-90 fps) streams
 - Able to stream to iPhone and Safari via HLS.
+- Low cpu utilization
 
 # Installation
    ```
