@@ -198,7 +198,7 @@ class Config(configparser.ConfigParser):
         self.read_dict({'server': {'listen': '', 'port': 8000}})
 
         if len(self.read(configfile)) == 0:
-            logging.warning(f'Couldn\'t read {configfile}, using deault config')
+            logging.warning(f'Couldn\'t read {configfile}, using default config')
 
         if len(self.sections()) == 1:
             self.add_section('/dev/video0')
