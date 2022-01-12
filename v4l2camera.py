@@ -1,44 +1,50 @@
 from fcntl import ioctl
-from threading import Condition
+from threading import Thread
 import mmap, os, struct, logging
 
 import v4l2
+from v4l2ctrls import V4L2Ctrls
+from v4l2m2m import V4L2M2M
 
+class V4L2Camera(Thread):
+    def __init__(self, device, pipe, config):
+        super(V4L2Camera, self).__init__()
 
-class H264NALU:
-    DELIMITER = b'\x00\x00\x00\x01'
-
-    NONIDRTYPE = 1
-    IDRTYPE = 5
-    SPSTYPE = 7
-    PPSTYPE = 8
-
-    @staticmethod
-    def get_type(nalubytes):
-        return nalubytes[0] & 0x1f
-
-class V4L2Camera(object):
-    def __init__(self, device, params):
         self.device = device
         self.stopped = False
-        self.num_buffers = 10
+        self.pipe = pipe
+        self.encoder = None
+        self.num_buffers = 6
         self.buffers = []
-        self.sps = None
-        self.pps = None
-        self.condition = Condition()
-        self.frame_data = None
-        self.frame_secs = 0
-        self.frame_usecs = 0
+        self.pix_fmt = None
+
         self.fd = os.open(self.device, os.O_RDWR, 0)
         
-        self.init_device(int(params.get('width')), int(params.get('height')))
-        self.init_fps(int(params.get('fps')))
+        params = dict(config.items(device))
+        width = int(params.get('width'))
+        height = int(params.get('height'))
+        fps = int(params.get('fps'))
+        capture_format = params.get('capture_format', 'H264')
+
+        self.init_device(width, height, capture_format)
+        self.init_fps(fps)
         
-        self.ctrls = self.get_device_controls()
-        self.init_v4l2_ctrls(self.ctrls, params)
+        self.ctrls = V4L2Ctrls(self.device, self.fd)
+        self.ctrls.setup_v4l2_ctrls(params)
+
+        encoder = params.get('encoder')
+        
+        if encoder:
+            encoderparams = dict(config.items(encoder) if encoder in config else {})
+            self.encoder = V4L2M2M(encoder, encoderparams, width, height, capture_format, 'H264')
+            self.encoder.pipe = self.pipe
 
 
-    def init_device(self, width, height):
+        if not self.encoder and capture_format != 'H264':
+            raise Exception(f'{self.device}: capture format is not H264, please set the V4L2 M2M encoder device with the encoder config parameter')
+
+
+    def init_device(self, width, height, capture_format):
         cap = v4l2.v4l2_capability()
         fmt = v4l2.v4l2_format()
         
@@ -50,12 +56,18 @@ class V4L2Camera(object):
         if not (cap.capabilities & v4l2.V4L2_CAP_STREAMING):
             raise Exception(f'{self.device} does not support streaming i/o')
 
+        pix_fmt = v4l2.get_fourcc(capture_format)
+
         fmt.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
         fmt.fmt.pix.width = width
         fmt.fmt.pix.height = height
-        fmt.fmt.pix.pixelformat = v4l2.V4L2_PIX_FMT_H264
+        fmt.fmt.pix.pixelformat = pix_fmt
         fmt.fmt.pix.field = v4l2.V4L2_FIELD_ANY
         ioctl(self.fd, v4l2.VIDIOC_S_FMT, fmt)
+
+        if not (fmt.fmt.pix.pixelformat == pix_fmt):
+            raise Exception(f'{self.device} {capture_format} format not available')
+
 
     def init_fps(self, fps):
         parm = v4l2.v4l2_streamparm()
@@ -63,150 +75,30 @@ class V4L2Camera(object):
         parm.parm.capture.timeperframe.numerator = 1000
         parm.parm.capture.timeperframe.denominator = fps * parm.parm.capture.timeperframe.numerator
         
-        ioctl(self.fd, v4l2.VIDIOC_S_PARM, parm)
+        try:
+            ioctl(self.fd, v4l2.VIDIOC_S_PARM, parm)
+        except Exception as e:
+            logging.warning(f'{self.device} Can\'t set fps to {fps}: {e}')
 
         tf = parm.parm.capture.timeperframe
         if tf.denominator == 0 or tf.numerator == 0:
             raise Exception(f'VIDIOC_S_PARM: Invalid frame rate {fps}')
         if fps != (tf.denominator / tf.numerator):
-            logging.warning(f'Can\'t set fps to {fps} using {tf.denominator / tf.numerator}')
+            logging.warning(f'{self.device} Can\'t set fps to {fps} using {tf.denominator / tf.numerator}')
 
-    def init_v4l2_ctrls(self, ctrls, params):
-        for k, v in params.items():
-            if k == 'width' or k == 'height' or k == 'fps':
-                continue
-            ctrl = self.find_ctrl(ctrls, k)
-            if ctrl == None:
-                logging.warning(f'Can\'t find {k} v4l2 control')
-                continue
-            intvalue = 0
-            if ctrl.type == v4l2.V4L2_CTRL_TYPE_INTEGER:
-                intvalue = int(v)
-            elif ctrl.type == v4l2.V4L2_CTRL_TYPE_BOOLEAN:
-                intvalue = int(bool(v))
-            elif ctrl.type == v4l2.V4L2_CTRL_TYPE_MENU:
-                menu = self.find_menu_by_name(ctrl.menus, v)
-                if menu == None:
-                    logging.warning(f'Can\'t find {v} in {[str(c.name, "utf-8") for c in ctrl.menus]}')
-                    continue
-                intvalue = menu.index
-            elif ctrl.type == v4l2.V4L2_CTRL_TYPE_INTEGER_MENU:
-                menu = self.find_menu_by_value(ctrl.menus, int(v))
-                if menu == None:
-                    logging.warning(f'Can\'t find {v} in {[c.value for c in ctrl.menus]}')
-                    continue
-                intvalue = menu.index
-            else:
-                logging.warning(f'Can\'t set {k} to {v} (Unsupported control type {ctrl.type})')
-                continue
-            try:
-                new_ctrl = v4l2.v4l2_control(ctrl.id, intvalue)
-                ioctl(self.fd, v4l2.VIDIOC_S_CTRL, new_ctrl)
-                if new_ctrl.value != intvalue:
-                    logging.warning(f'Can\'t set {k} to {v} using {new_ctrl.value} instead of {intvalue}')
-                    continue
-                ctrl.value = intvalue
-            except Exception as e:
-                logging.warning(f'Can\'t set {k} to {v} ({e})')
-
-            
-
-    def find_ctrl(self, ctrls, name):
-        for c in ctrls:
-            if name == str(c.name, 'utf-8'):
-                return c
-        return None
-    def find_menu_by_name(self, menus, name):
-        for m in menus:
-            if name == str(m.name, 'utf-8'):
-                return m
-        return None
-    def find_menu_by_value(self, menus, value):
-        for m in menus:
-            if value == m.value:
-                return m
-        return None
-
-    def get_device_controls(self):
-        ctrls = []
-        strtrans = bytes.maketrans(b' -', b'__')
-        next_fl = v4l2.V4L2_CTRL_FLAG_NEXT_CTRL | v4l2.V4L2_CTRL_FLAG_NEXT_COMPOUND
-        qctrl = v4l2.v4l2_queryctrl(next_fl)
-        while True:
-            try:
-                ioctl(self.fd, v4l2.VIDIOC_QUERYCTRL, qctrl)
-            except:
-                break
-            if qctrl.type in [v4l2.V4L2_CTRL_TYPE_INTEGER, v4l2.V4L2_CTRL_TYPE_BOOLEAN,
-                v4l2.V4L2_CTRL_TYPE_MENU,v4l2.V4L2_CTRL_TYPE_INTEGER_MENU]:
-
-                try:
-                    ctrl = v4l2.v4l2_control(qctrl.id)
-                    ioctl(self.fd, v4l2.VIDIOC_G_CTRL, ctrl)
-                    qctrl.value = ctrl.value
-                except:
-                    logging.warning(f'Can\'t get ctrl {qctrl.name} value')
-
-                qctrl.name = qctrl.name.lower().translate(strtrans, delete = b',&(.)').replace(b'__', b'_')
-                if qctrl.type in [v4l2.V4L2_CTRL_TYPE_MENU, v4l2.V4L2_CTRL_TYPE_INTEGER_MENU]:
-                    qctrl.menus = []
-                    for i in range(qctrl.minimum, qctrl.maximum + 1):
-                        try:
-                            qmenu = v4l2.v4l2_querymenu(qctrl.id, i)
-                            ioctl(self.fd, v4l2.VIDIOC_QUERYMENU, qmenu)
-                        except:
-                            continue
-                        qctrl.menus.append(qmenu)
-                        
-            ctrls.append(qctrl)
-            qctrl = v4l2.v4l2_queryctrl(qctrl.id | next_fl)
-
-        return ctrls
-
-    def print_ctrls(self):
-        print(f'V4L2 controls for {self.device}\n')
-        print(f'If you want to set one, just put as ctrl_name = Value into the configfile under the [{self.device}]')
-        for c in self.ctrls:
-            if c.type == v4l2.V4L2_CTRL_TYPE_CTRL_CLASS:
-                print('\n\n' + str(c.name, 'utf-8')+'\n')
-            else:
-                print(str(c.name, 'utf-8'), end = ' = ')
-                if c.type in [v4l2.V4L2_CTRL_TYPE_MENU, v4l2.V4L2_CTRL_TYPE_INTEGER_MENU]:
-                    defmenu = None
-                    valmenu = None
-                    for m in c.menus:
-                        if m.index == c.value:
-                            valmenu = m
-                        if m.index == c.default:
-                            defmenu = m
-                    if valmenu:
-                        print(f'{str(valmenu.name, "utf-8") if c.type == v4l2.V4L2_CTRL_TYPE_MENU else valmenu.value}\t(', end = ' ')
-                    if defmenu:
-                        print(f'default: {str(defmenu.name, "utf-8") if c.type == v4l2.V4L2_CTRL_TYPE_MENU else defmenu.value}', end = ' ')
-                    print('values:', end = ' ')
-                    for m in c.menus:
-                        print('%a' % (str(m.name, 'utf-8') if c.type == v4l2.V4L2_CTRL_TYPE_MENU else m.value),
-                            end = ' ')
-                    print(')')
-                elif c.type in [v4l2.V4L2_CTRL_TYPE_INTEGER, v4l2.V4L2_CTRL_TYPE_BOOLEAN]:
-                    print('%a\t(' % c.value, 'default:', c.default, 'min:', c.minimum, 'max:', c.maximum, end = '')
-                    if c.step != 1:
-                        print(' step:', c.step, end = '')
-                    print(')')
-                else:
-                    print()
 
     def init_mmap(self):
         req = v4l2.v4l2_requestbuffers()
         
         req.count = self.num_buffers
         req.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
-        req.memory = v4l2.V4L2_MEMORY_MMAP
-        
+        req.memory = v4l2.V4L2_MEMORY_MMAP if not self.encoder else v4l2.V4L2_MEMORY_DMABUF
+
+
         try:
             ioctl(self.fd, v4l2.VIDIOC_REQBUFS, req)
         except Exception:
-            raise Exception('video buffer request failed')
+            raise Exception(f'video buffer request failed on {self.device}')
         
         if req.count < 2:
             raise Exception(f'Insufficient buffer memory on {self.device}')
@@ -216,61 +108,70 @@ class V4L2Camera(object):
         for i in range(req.count):
             buf = v4l2.v4l2_buffer()
             buf.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
-            buf.memory = v4l2.V4L2_MEMORY_MMAP
+            buf.memory = v4l2.V4L2_MEMORY_MMAP if not self.encoder else v4l2.V4L2_MEMORY_DMABUF
             buf.index = i
             
             ioctl(self.fd, v4l2.VIDIOC_QUERYBUF, buf)
 
-            buf.buffer = mmap.mmap(self.fd, buf.length, mmap.PROT_READ, mmap.MAP_SHARED, offset=buf.m.offset)
+            #print(buf.m.offset, buf.length)
+
+            if not self.encoder:
+                buf.buffer = mmap.mmap(self.fd, buf.length,
+                    flags=mmap.MAP_SHARED | 0x08000, #MAP_POPULATE
+                    prot=mmap.PROT_READ | mmap.PROT_WRITE,
+                    offset=buf.m.offset)
+            else:
+                buf.m.fd = self.encoder.input_bufs[i].fd
+
+
+
+            #expbuf = v4l2.v4l2_exportbuffer()
+            #expbuf.type = buf.type
+            #expbuf.index = buf.index
+            #expbuf.flags = os.O_CLOEXEC | os.O_RDWR
+            
+            #ioctl(self.fd, v4l2.VIDIOC_EXPBUF, expbuf)
+            #print(f'{self.device} expbuf idx {buf.index} dma fd {expbuf.fd}')
+            #buf.fd = expbuf.fd
+
+
             self.buffers.append(buf)
 
+            #print(f'{self.device} qbuf {buf.index}')
+            ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
+
     def request_key_frame(self):
+        if self.encoder:
+            return self.encoder.request_key_frame()
+        
         try:
             ctrl = v4l2.v4l2_control(v4l2.V4L2_CID_MPEG_VIDEO_FORCE_KEY_FRAME, 0)
             ioctl(self.fd, v4l2.VIDIOC_S_CTRL, ctrl)
         except:
-            logging.warning(f'Can\'t request keyframe')
+            logging.warning(f'{self.device} Can\'t request keyframe')
 
-    def read_header(self, buf):
-        data = buf.buffer.read(buf.bytesused)
-        nalus = data.split(H264NALU.DELIMITER)
-
-        if len(nalus) > 1 and len(nalus[0]) == 0:
-            nalus.pop(0)
-
-        for nalu in nalus:
-            if H264NALU.get_type(nalu) == H264NALU.SPSTYPE:
-                self.sps = nalu
-            if H264NALU.get_type(nalu) == H264NALU.PPSTYPE:
-                self.pps = nalu
-        if not self.sps or not self.pps:
-            logging.error('V4L2Camera: can\'t read SPS and PPS from the first frame')
-    
-    def process_image(self, buf):
-        data = memoryview(buf.buffer)[4 : buf.bytesused]
-
-        with self.condition:
-            self.frame_data = data
-            self.frame_secs = buf.timestamp.secs
-            self.frame_usecs = buf.timestamp.usecs
-            self.condition.notify_all()
+    def print_ctrls(self):
+        self.ctrls.print_ctrls()
+        if self.encoder:
+            self.encoder.print_ctrls()
 
     def main_loop(self):
         seq = 0
         while not self.stopped:
             buf = self.buffers[seq % self.num_buffers]
+            #print(f'{self.device} dqbuf {buf.index}')
             ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
-            if seq == 0:
-                self.read_header(self.buffers[buf.index])
+            if not self.encoder:
+                self.pipe.write_buf(seq, buf)
             else:
-                self.process_image(self.buffers[buf.index])
+                self.encoder.write_buf(seq, buf)
+            #print(f'{self.device} qbuf {buf.index}')
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
             seq += 1
 
+
     def start_capturing(self):
         self.init_mmap()
-        for buf in self.buffers:
-            ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
         ioctl(self.fd, v4l2.VIDIOC_STREAMON, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
         self.main_loop()
         ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
@@ -278,3 +179,16 @@ class V4L2Camera(object):
     def stop_capturing(self):
         self.stopped = True
 
+    # Thread run
+    def run(self):
+        if self.encoder:
+            self.encoder.start()
+        self.start_capturing()
+
+    # Thread stop
+    def stop(self):
+        self.stop_capturing()
+        if self.encoder:
+            self.encoder.stop()
+            self.encoder.join()
+        

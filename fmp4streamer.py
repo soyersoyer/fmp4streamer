@@ -1,10 +1,10 @@
 import io, socketserver, logging, configparser, getopt, sys
-from threading import Thread
 from http import server
 from time import time
 
 import bmff
-from v4l2camera import V4L2Camera, H264NALU
+from v4l2camera import V4L2Camera
+from h264 import H264Parser, H264NALU
 
 def get_index_html(codec):
     return f'''<!doctype html>
@@ -149,14 +149,10 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Content-Type', f'video/mp4; codecs="{config.codec()}"')
             self.end_headers()
             try:
-                mp4_writer = MP4Writer(self.wfile, config.width(), config.height(), config.timescale(), camera.sps, camera.pps)
+                mp4_writer = MP4Writer(self.wfile, config.width(), config.height(), config.timescale(), h264parser.sps, h264parser.pps)
                 camera.request_key_frame()
                 while True:
-                    with camera.condition:
-                        camera.condition.wait()
-                        frame_data = camera.frame_data
-                        frame_secs = camera.frame_secs
-                        frame_usecs = camera.frame_usecs
+                    frame_data, frame_secs, frame_usecs = h264parser.read_frame()
                     mp4_writer.add_nalu(frame_data, frame_secs, frame_usecs)
             except Exception as e:
                 self.log_message(f'Removed streaming client {self.client_address} {str(e)}')
@@ -176,17 +172,6 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
         finally:
             self.server_close()
 
-
-class V4L2CameraThread(Thread):
-    def __init__(self, camera):
-        super(V4L2CameraThread, self).__init__()
-        self.camera = camera
-
-    def run(self):
-        self.camera.start_capturing()
-
-    def stop(self):
-        self.camera.stop_capturing()
 
 class Config(configparser.ConfigParser):
     def __init__(self, configfile):
@@ -268,14 +253,16 @@ for current_argument, current_value in arguments:
 config = Config(configfile)
 device = config.get_device()
 
-camera = V4L2Camera(device, dict(config.items(device)))
+h264parser = H264Parser()
+camera = V4L2Camera(device, h264parser, config)
+
 if list_controls:
     camera.print_ctrls()
     sys.exit(0)
-cameraThread = V4L2CameraThread(camera)
-cameraThread.start()
+
+camera.start()
 
 server = StreamingServer((config.get('server', 'listen'), config.getint('server', 'port')), StreamingHandler)
 server.start()
-cameraThread.stop()
-cameraThread.join()
+camera.stop()
+camera.join()

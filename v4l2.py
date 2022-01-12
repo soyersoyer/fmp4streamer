@@ -117,6 +117,7 @@ class timeval(ctypes.Structure):
 
 
 VIDEO_MAX_FRAME = 32
+VIDEO_MAX_PLANES = 8
 
 
 VID_TYPE_CAPTURE = 1
@@ -138,6 +139,10 @@ VID_TYPE_MJPEG_ENCODER = 8192
 def v4l2_fourcc(a, b, c, d):
     return ord(a) | (ord(b) << 8) | (ord(c) << 16) | (ord(d) << 24)
 
+def get_fourcc(str):
+    if len(str) != 4:
+        raise ValueError('Invalid fourcc: {str}')
+    return v4l2_fourcc(str[0], str[1], str[2], str[3])
 
 v4l2_field = enum
 (
@@ -193,8 +198,14 @@ v4l2_buf_type = enum
     V4L2_BUF_TYPE_SLICED_VBI_CAPTURE,
     V4L2_BUF_TYPE_SLICED_VBI_OUTPUT,
     V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
+    V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
+    V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
+    V4L2_BUF_TYPE_SDR_CAPTURE,
+    V4L2_BUF_TYPE_SDR_OUTPUT,
+    V4L2_BUF_TYPE_META_CAPTURE,
+    V4L2_BUF_TYPE_META_OUTPUT,
     V4L2_BUF_TYPE_PRIVATE,
-) = list(range(1, 9)) + [0x80]
+) = list(range(1, 15)) + [0x80]
 
 
 v4l2_ctrl_type = enum
@@ -224,11 +235,13 @@ v4l2_memory = enum
     V4L2_MEMORY_MMAP,
     V4L2_MEMORY_USERPTR,
     V4L2_MEMORY_OVERLAY,
-) = range(1, 4)
+    V4L2_MEMORY_DMABUF,
+) = range(1, 5)
 
 
 v4l2_colorspace = enum
 (
+    V4L2_COLORSPACE_DEFAULT,
     V4L2_COLORSPACE_SMPTE170M,
     V4L2_COLORSPACE_SMPTE240M,
     V4L2_COLORSPACE_REC709,
@@ -237,7 +250,11 @@ v4l2_colorspace = enum
     V4L2_COLORSPACE_470_SYSTEM_BG,
     V4L2_COLORSPACE_JPEG,
     V4L2_COLORSPACE_SRGB,
-) = range(1, 9)
+    V4L2_COLORSPACE_OPRGB,
+    V4L2_COLORSPACE_BT2020,
+    V4L2_COLORSPACE_RAW,
+    V4L2_COLORSPACE_DCI_P3,
+) = range(13)
 
 
 v4l2_priority = enum
@@ -577,12 +594,42 @@ class v4l2_requestbuffers(ctypes.Structure):
         ('reserved', ctypes.c_uint32 * 2),
     ]
 
+class v4l2_exportbuffer(ctypes.Structure):
+    _fields_ = [
+        ('type', v4l2_buf_type),
+        ('index', ctypes.c_uint32),
+        ('plane', ctypes.c_uint32),
+        ('flags', ctypes.c_uint32),
+        ('fd', ctypes.c_int32),
+        ('reserved', ctypes.c_uint32 * 11),
+    ]
+
+
+class v4l2_plane(ctypes.Structure):
+    class _u(ctypes.Union):
+        _fields_ = [
+            ('mem_offset', ctypes.c_uint32),
+            ('userptr', ctypes.c_ulong),
+            ('fd', ctypes.c_int32),
+        ]
+    
+    _fields_ = [
+        ('bytesused', ctypes.c_uint32),
+        ('length', ctypes.c_uint32),
+        ('m', _u),
+        ('data_offset', ctypes.c_uint32),
+        ('reserved', ctypes.c_uint32 * 11),
+    ]
+
+v4l2_planes = v4l2_plane * VIDEO_MAX_PLANES
 
 class v4l2_buffer(ctypes.Structure):
     class _u(ctypes.Union):
         _fields_ = [
             ('offset', ctypes.c_uint32),
             ('userptr', ctypes.c_ulong),
+            ('planes', ctypes.POINTER(v4l2_plane)),
+            ('fd', ctypes.c_int32),
         ]
 
     _fields_ = [
@@ -1955,6 +2002,7 @@ VIDIOC_G_FBUF = _IOR('V', 10, v4l2_framebuffer)
 VIDIOC_S_FBUF = _IOW('V', 11, v4l2_framebuffer)
 VIDIOC_OVERLAY = _IOW('V', 14, ctypes.c_int)
 VIDIOC_QBUF = _IOWR('V', 15, v4l2_buffer)
+VIDIOC_EXPBUF = _IOWR('V', 16, v4l2_exportbuffer)
 VIDIOC_DQBUF = _IOWR('V', 17, v4l2_buffer)
 VIDIOC_STREAMON = _IOW('V', 18, ctypes.c_int)
 VIDIOC_STREAMOFF = _IOW('V', 19, ctypes.c_int)
