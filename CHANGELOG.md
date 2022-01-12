@@ -1,5 +1,9 @@
 # Changelog
 
+## [3.1.0] - 2022-01-12
+### Added
+- V4L2 M2M H264 encoding for USB cameras
+
 ## [3.0.3] - 2021-10-25
 ### Fixed
 - Eliminate the rounding errors in sampleduration calculation
