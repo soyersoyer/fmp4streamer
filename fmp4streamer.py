@@ -266,6 +266,7 @@ if list_controls:
 camera.start()
 
 server = StreamingServer((config.get('server', 'listen'), config.getint('server', 'port')), StreamingHandler)
+sys.stdout.write(f'fmp4streamer will now start listening on {server.server_address}\n')
 server.start()
 camera.stop()
 camera.join()
