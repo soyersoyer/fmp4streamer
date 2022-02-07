@@ -76,17 +76,20 @@ class MP4Writer:
         bmff.write_moov(buf, self.width, self.height, self.timescale, self.sps, self.pps)
         self.w.write(buf.getbuffer())
 
-    def add_nalu(self, frame_data, frame_secs, frame_usecs):
-        nalutype = H264NALU.get_type(frame_data)
+    def add_frame(self, nalus, frame_secs, frame_usecs):
+        nalutype = H264NALU.get_type(nalus[0])
 
-        # our first frame should have SPS, PPS, IDR NALU, so wait until we have an IDR
-        if self.seq == 0 and nalutype != H264NALU.IDRTYPE:
+        # our first frame should have SPS, PPS, IDR NALUS, so wait until we have an IDR or SPS+PPS+IDR
+        if self.seq == 0 and (nalutype != H264NALU.IDRTYPE and nalutype != H264NALU.SPSTYPE):
             return
 
+        # we have IDR or SPS+PPS+IDR
         if nalutype == H264NALU.IDRTYPE:
-            self.write_frame([self.sps, self.pps, frame_data], frame_secs, frame_usecs, is_idr=True)
+            self.write_frame([self.sps, self.pps] + nalus, frame_secs, frame_usecs, is_idr=True)
+        elif nalutype == H264NALU.SPSTYPE:
+            self.write_frame(nalus, frame_secs, frame_usecs, is_idr=True)
         elif nalutype == H264NALU.NONIDRTYPE:
-            self.write_frame([frame_data], frame_secs, frame_usecs, is_idr=False)
+            self.write_frame(nalus, frame_secs, frame_usecs, is_idr=False)
 
     def write_frame(self, nalus, frame_secs, frame_usecs, is_idr):
         if self.seq == 0:
@@ -152,8 +155,8 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                 mp4_writer = MP4Writer(self.wfile, config.width(), config.height(), config.timescale(), h264parser.sps, h264parser.pps)
                 camera.request_key_frame()
                 while True:
-                    frame_data, frame_secs, frame_usecs = h264parser.read_frame()
-                    mp4_writer.add_nalu(frame_data, frame_secs, frame_usecs)
+                    nalus, frame_secs, frame_usecs = h264parser.read_frame()
+                    mp4_writer.add_frame(nalus, frame_secs, frame_usecs)
             except Exception as e:
                 self.log_message(f'Removed streaming client {self.client_address} {str(e)}')
         else:
