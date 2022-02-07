@@ -158,7 +158,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                     nalus, frame_secs, frame_usecs = h264parser.read_frame()
                     mp4_writer.add_frame(nalus, frame_secs, frame_usecs)
             except Exception as e:
-                self.log_message(f'Removed streaming client {self.client_address} {str(e)}')
+                self.log_message(f'Removed streaming client {self.client_address} {e}')
         else:
             self.send_error(404)
             self.end_headers()
