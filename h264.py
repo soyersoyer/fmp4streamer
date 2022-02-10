@@ -13,6 +13,8 @@ class H264NALU:
     def get_type(nalubytes):
         return nalubytes[0] & 0x1f
 
+JPEG_SOI = b'\xff\xd8' # JPEG Start Of Image
+JPEG_APP4 = b'\xff\xe4' # JPEG APP4 marker to store metadata (H264 frame)
 
 class H264Parser(object):
     def __init__(self):
@@ -28,14 +30,15 @@ class H264Parser(object):
         start = 0
         end = buf.bytesused
 
-        if buf.buffer.find(b'\xff\xd8') == 0:
-            app4 = buf.buffer.find(b'\xff\xe4')
-            if app4 != -1:
-                header_length = struct.unpack_from('<H', buf.buffer, app4 + 6)
-                payload_start = app4 + 4 + header_length[0]
+        # find H264 inside MJPG
+        if buf.buffer.find(JPEG_SOI) == 0:
+            app4_start = buf.buffer.find(JPEG_APP4)
+            if app4_start != -1:
+                header_length = struct.unpack_from('<H', buf.buffer, app4_start + 6)
+                payload_start = app4_start + 4 + header_length[0]
                 payload_size = struct.unpack_from('<I', buf.buffer, payload_start)
                 start = payload_start + 4
-                end = payload_start + 4 + payload_size[0]
+                end = start + payload_size[0]
 
         while start != -1:
             next = buf.buffer.find(H264NALU.DELIMITER, start + 4, end)
