@@ -1,4 +1,4 @@
-import logging
+import logging, struct
 from threading import Condition
 
 class H264NALU:
@@ -22,14 +22,25 @@ class H264Parser(object):
         self.nalus = []
         self.frame_secs = 0
         self.frame_usecs = 0
-    
+
     def write_buf(self, seq, buf):
         nalus = []
-        last = 0
-        while last != -1:
-            next = buf.buffer.find(H264NALU.DELIMITER, last + 4, buf.bytesused)
-            nalus.append(memoryview(buf.buffer)[last + 4 : next if next != -1 else buf.bytesused])
-            last = next
+        start = 0
+        end = buf.bytesused
+
+        if buf.buffer.find(b'\xff\xd8') == 0:
+            app4 = buf.buffer.find(b'\xff\xe4')
+            if app4 != -1:
+                header_length = struct.unpack_from('<H', buf.buffer, app4 + 6)
+                payload_start = app4 + 4 + header_length[0]
+                payload_size = struct.unpack_from('<I', buf.buffer, payload_start)
+                start = payload_start + 4
+                end = payload_start + 4 + payload_size[0]
+
+        while start != -1:
+            next = buf.buffer.find(H264NALU.DELIMITER, start + 4, end)
+            nalus.append(memoryview(buf.buffer)[start + 4 : next if next != -1 else end])
+            start = next
 
         if seq == 0:
             for nalu in nalus:
@@ -38,7 +49,7 @@ class H264Parser(object):
                 if len(nalu) and H264NALU.get_type(nalu) == H264NALU.PPSTYPE:
                     self.pps = bytes(nalu)
             if not self.sps or not self.pps:
-                logging.error('H264Parser: can\'t read SPS and PPS from the first frame')
+                logging.error('H264Parser: Invalid H264 first frame. Unable to read SPS and PPS.')
 
         with self.condition:
             self.nalus = nalus

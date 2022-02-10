@@ -1,6 +1,6 @@
 from fcntl import ioctl
 from threading import Thread
-import mmap, os, struct, logging
+import mmap, os, struct, logging, sys
 
 from v4l2ctrls import V4L2Ctrls
 import v4l2
@@ -44,7 +44,8 @@ class V4L2M2M(Thread):
         ioctl(self.fd, v4l2.VIDIOC_S_FMT, fmt)
 
         if not (fmt.fmt.pix.pixelformat == input_pix_fmt):
-            raise Exception(f'{self.device}: {input_format} input format not available')
+            logging.error(f'{self.device}: {input_format} input format not available')
+            sys.exit(3)
 
         capture_pix_fmt = v4l2.get_fourcc(capture_format)
 
@@ -57,7 +58,8 @@ class V4L2M2M(Thread):
         ioctl(self.fd, v4l2.VIDIOC_S_FMT, fmt)
 
         if not (fmt.fmt.pix.pixelformat == capture_pix_fmt):
-            raise Exception(f'{self.device}: {capture_format} capture format not available')
+            logging.error(f'{self.device}: {capture_format} capture format not available')
+            sys.exit(3)
 
         # Request that the necessary buffers are allocated. The output queue
         # (input to the encoder) shares buffers from our caller, these must be

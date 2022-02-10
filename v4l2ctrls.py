@@ -12,9 +12,9 @@ class V4L2Ctrls:
 
     def setup_v4l2_ctrls(self, params):
         for k, v in params.items():
-            if k in ['width', 'height', 'fps', 'capture_format', 'encoder']:
+            if k in ['width', 'height', 'fps', 'capture_format', 'encoder'] or k.startswith('uvcx_'):
                 continue
-            ctrl = self.find_ctrl(self.ctrls, k)
+            ctrl = find_by_name(self.ctrls, k)
             if ctrl == None:
                 logging.warning(f'Can\'t find {k} v4l2 control')
                 continue
@@ -24,13 +24,13 @@ class V4L2Ctrls:
             elif ctrl.type == v4l2.V4L2_CTRL_TYPE_BOOLEAN:
                 intvalue = int(bool(v))
             elif ctrl.type == v4l2.V4L2_CTRL_TYPE_MENU:
-                menu = self.find_menu_by_name(ctrl.menus, v)
+                menu = find_by_name(ctrl.menus, v)
                 if menu == None:
                     logging.warning(f'Can\'t find {v} in {[str(c.name, "utf-8") for c in ctrl.menus]}')
                     continue
                 intvalue = menu.index
             elif ctrl.type == v4l2.V4L2_CTRL_TYPE_INTEGER_MENU:
-                menu = self.find_menu_by_value(ctrl.menus, int(v))
+                menu = find_by_value(ctrl.menus, int(v))
                 if menu == None:
                     logging.warning(f'Can\'t find {v} in {[c.value for c in ctrl.menus]}')
                     continue
@@ -48,23 +48,6 @@ class V4L2Ctrls:
             except Exception as e:
                 logging.warning(f'Can\'t set {k} to {v} ({e})')
 
-            
-
-    def find_ctrl(self, ctrls, name):
-        for c in ctrls:
-            if name == str(c.name, 'utf-8'):
-                return c
-        return None
-    def find_menu_by_name(self, menus, name):
-        for m in menus:
-            if name == str(m.name, 'utf-8'):
-                return m
-        return None
-    def find_menu_by_value(self, menus, value):
-        for m in menus:
-            if value == m.value:
-                return m
-        return None
 
     def get_device_controls(self):
         ctrls = []
@@ -103,7 +86,7 @@ class V4L2Ctrls:
         self.ctrls = ctrls
 
     def print_ctrls(self):
-        print(f'\nV4L2 controls for {self.device}\n')
+        print(f'\nControls for {self.device}\n')
         print(f'If you want to set one, just put as ctrl_name = Value into the configfile under the [{self.device}]')
         for c in self.ctrls:
             if c.type == v4l2.V4L2_CTRL_TYPE_CTRL_CLASS:
@@ -134,3 +117,23 @@ class V4L2Ctrls:
                     print(')')
                 else:
                     print()
+
+    def request_key_frame(self):
+        try:
+            ctrl = v4l2.v4l2_control(v4l2.V4L2_CID_MPEG_VIDEO_FORCE_KEY_FRAME, 0)
+            ioctl(self.fd, v4l2.VIDIOC_S_CTRL, ctrl)
+        except:
+            logging.warning(f'{self.device} can\'t request keyframe')
+
+
+def find_by_name(ctrls, name):
+    for c in ctrls:
+        if name == str(c.name, 'utf-8'):
+            return c
+    return None
+
+def find_by_value(menus, value):
+    for m in menus:
+        if value == m.value:
+            return m
+    return None
