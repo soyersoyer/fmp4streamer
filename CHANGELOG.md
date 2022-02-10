@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0] - 2022-02-10
+### Added
+- Support UVC H264 extension
+- Support H264 inside MJPG
+### Fixed
+- Handle H264 slices
+
 ## [3.1.0] - 2022-01-12
 ### Added
 - V4L2 M2M H264 encoding for USB cameras
