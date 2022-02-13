@@ -1,4 +1,4 @@
-import logging
+import logging, os.path
 
 import uvcx
 
@@ -6,24 +6,24 @@ class UVCXCtrls:
     def __init__(self, device, fd):
         self.device = device
         self.fd = fd
-        self.version = uvcx.get_uvcx_h264_version(self.fd)
+        self.unit_id = find_unit_id_in_sysfs(device, uvcx.H264_XU_GUID)
         self.get_device_controls()
 
     def supported(self):
-        return self.version != 0
+        return self.unit_id != 0
 
     def h264_muxing_supported(self):
-        return (self.maximum_config.bStreamMuxOption & uvcx.STREAM_MUX_H264) > 0
+        return self.supported() and (self.maximum_config.bStreamMuxOption & uvcx.STREAM_MUX_H264) > 0
 
     def get_device_controls(self):
         if not self.supported():
             self.ctrls = []
             return
 
-        self.default_config = uvcx.get_default_config(self.fd)
-        self.minimum_config = uvcx.get_minimum_config(self.fd)
-        self.maximum_config = uvcx.get_maximum_config(self.fd)
-        self.current_config = uvcx.get_current_config(self.fd)
+        self.default_config = uvcx.get_default_config(self.fd, self.unit_id)
+        self.minimum_config = uvcx.get_minimum_config(self.fd, self.unit_id)
+        self.maximum_config = uvcx.get_maximum_config(self.fd, self.unit_id)
+        self.current_config = uvcx.get_current_config(self.fd, self.unit_id)
         self.ctrls = [
             UVCXCtrl(
                 'uvcx_h264_stream_mux',
@@ -143,12 +143,9 @@ class UVCXCtrls:
             else:
                 setattr(self.current_config, ctrl.sname, int(v))
             self.current_config.bmHints |= ctrl.hint
-        
-        if not self.supported():
-            return
 
-        uvcx.video_commit(self.fd, self.current_config)
-        current = uvcx.get_current_config(self.fd)
+        uvcx.video_commit(self.fd, self.unit_id, self.current_config)
+        current = uvcx.get_current_config(self.fd, self.unit_id)
 
         for k, v in params.items():
             if not k.startswith('uvcx_'):
@@ -165,7 +162,7 @@ class UVCXCtrls:
                 logging.warning(f'uvcxctrls: failed to set {k} to {desired_value}, current value {current_value}\n')
 
     def request_h264_idr(self):
-        uvcx.request_h264_frame_type(self.fd, uvcx.PICTURE_TYPE_IDR)
+        uvcx.request_h264_frame_type(self.fd, self.unit_id, uvcx.PICTURE_TYPE_IDR)
 
 def find_by_name(ctrls, name):
     for c in ctrls:
@@ -178,6 +175,26 @@ def find_by_value(menu, value):
         if v == value:
             return k
     return None
+
+def find_unit_id_in_sysfs(device, guid):
+    device = device.replace('/dev/', '')
+    descfile = f'/sys/class/video4linux/{device}/../../../descriptors'
+    if not os.path.isfile(descfile):
+        descfile = f'/sys/class/video4linux/{device}/../../descriptors'
+        if not os.path.isfile(descfile):
+            return 0
+
+    try:
+        with open(descfile, 'rb') as f:
+            descriptors = f.read()
+            guid_start = descriptors.find(guid)
+            if guid_start:
+                return descriptors[guid_start - 1]
+    except Exception as e:
+        logging.warning(f'uvcxctrls: failed to read uvc xu unit id from {descfile}')
+
+    return 0
+
 
 
 class UVCXCtrl:

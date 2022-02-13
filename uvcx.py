@@ -54,9 +54,8 @@ UVC_GET_LEN      = 0x85
 UVC_GET_INFO     = 0x86
 UVC_GET_DEF      = 0x87
 
-# On Logitech C920 v1 and C930e
-# XXX: query from usb as extension guid a29e7641-de04-47e3-8b2b-f4341aff003b
-H264_UNIT_ID = 12
+# H264 extension GUID a29e7641-de04-47e3-8b2b-f4341aff003b
+H264_XU_GUID = b'\x41\x76\x9e\xa2\x04\xde\xe3\x47\x8b\x2b\xf4\x34\x1a\xff\x00\x3b'
 
 UVCX_VIDEO_CONFIG_PROBE		 = 0x01
 UVCX_VIDEO_CONFIG_COMMIT	 = 0x02
@@ -151,11 +150,11 @@ class uvcx_video_config_probe_commit(ctypes.Structure):
     ]
 
 
-def get_length_xu_control(fd, unit, selector):
+def get_length_xu_control(fd, unit_id, selector):
     length = ctypes.c_uint16(0)
 
     xu_ctrl_query = uvc_xu_control_query()
-    xu_ctrl_query.unit = unit
+    xu_ctrl_query.unit = unit_id
     xu_ctrl_query.selector = selector
     xu_ctrl_query.query = UVC_GET_LEN
     xu_ctrl_query.size = 2 # sizeof(length)
@@ -168,11 +167,11 @@ def get_length_xu_control(fd, unit, selector):
 
     return length
 
-def query_xu_control(fd, unit, selector, query, data):
-    len = get_length_xu_control(fd, unit, selector)
+def query_xu_control(fd, unit_id, selector, query, data):
+    len = get_length_xu_control(fd, unit_id, selector)
 
     xu_ctrl_query = uvc_xu_control_query()
-    xu_ctrl_query.unit = unit
+    xu_ctrl_query.unit = unit_id
     xu_ctrl_query.selector = selector
     xu_ctrl_query.query = query
     xu_ctrl_query.size = len
@@ -184,49 +183,48 @@ def query_xu_control(fd, unit, selector, query, data):
         logging.warning(f'uvcx: UVCIOC_CTRL_QUERY ({query}) - Fd: {fd} - Error: {e}')
 
 
-def video_probe(fd, query, video_config):
-    query_xu_control(fd, H264_UNIT_ID, UVCX_VIDEO_CONFIG_PROBE, query, video_config)
+def video_probe(fd, unit_id, query, video_config):
+    query_xu_control(fd, unit_id, UVCX_VIDEO_CONFIG_PROBE, query, video_config)
 
-def video_commit(fd, video_config):
-    query_xu_control(fd, H264_UNIT_ID, UVCX_VIDEO_CONFIG_COMMIT, UVC_SET_CUR, video_config)
+def video_commit(fd, unit_id,  video_config):
+    query_xu_control(fd, unit_id, UVCX_VIDEO_CONFIG_COMMIT, UVC_SET_CUR, video_config)
 
-def request_h264_frame_type(fd, type):
+def request_h264_frame_type(fd, unit_id, type):
 	picture_type_req = uvcx_picture_type_control_t()
 	picture_type_req.wLayerID = 0
 	picture_type_req.wPicType = type
 
-	query_xu_control(fd, H264_UNIT_ID, UVCX_PICTURE_TYPE_CONTROL, UVC_SET_CUR, picture_type_req)
+	query_xu_control(fd, unit_id, UVCX_PICTURE_TYPE_CONTROL, UVC_SET_CUR, picture_type_req)
 
-def request_h264_idr(fd):
-	request_h264_frame_type(fd, PICTURE_TYPE_IDR)
+def request_h264_idr(fd, unit_id):
+	request_h264_frame_type(fd, unit_id, PICTURE_TYPE_IDR)
 
-def get_default_config(fd):
+def get_default_config(fd, unit_id):
     config = uvcx_video_config_probe_commit()
-    video_probe(fd, UVC_GET_DEF, config)
+    video_probe(fd, unit_id, UVC_GET_DEF, config)
     return config
 
-def get_minimum_config(fd):
+def get_minimum_config(fd, unit_id):
     config = uvcx_video_config_probe_commit()
-    video_probe(fd, UVC_GET_MIN, config)
+    video_probe(fd, unit_id, UVC_GET_MIN, config)
     return config
 
-def get_maximum_config(fd):
+def get_maximum_config(fd, unit_id):
     config = uvcx_video_config_probe_commit()
-    video_probe(fd, UVC_GET_MAX, config)
+    video_probe(fd, unit_id, UVC_GET_MAX, config)
     return config
 
-def get_current_config(fd):
+def get_current_config(fd, unit_id):
     config = uvcx_video_config_probe_commit()
-    video_probe(fd, UVC_GET_CUR, config)
+    video_probe(fd, unit_id, UVC_GET_CUR, config)
     return config
 
-def get_resolution_config(fd):
+def get_resolution_config(fd, unit_id):
     config = uvcx_video_config_probe_commit()
-    video_probe(fd, UVC_GET_RES, config)
+    video_probe(fd, unit_id, UVC_GET_RES, config)
     return config
 
-
-def get_uvcx_h264_version(fd):
+def get_uvcx_h264_version(fd, unit_id):
     uvcx_version = uvcx_version_t()
-    query_xu_control(fd, H264_UNIT_ID, UVCX_VERSION, UVC_GET_CUR, uvcx_version)
+    query_xu_control(fd, unit_id, UVCX_VERSION, UVC_GET_CUR, uvcx_version)
     return uvcx_version.wVersion
