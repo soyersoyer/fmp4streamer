@@ -31,7 +31,7 @@ class H264Parser(object):
         end = buf.bytesused
 
         # find H264 inside MJPG
-        if buf.buffer.find(JPEG_SOI) == 0:
+        if buf.buffer.find(JPEG_SOI, 0, 2) == 0:
             app4_start = buf.buffer.find(JPEG_APP4)
             if app4_start != -1:
                 header_length = struct.unpack_from('<H', buf.buffer, app4_start + 6)
