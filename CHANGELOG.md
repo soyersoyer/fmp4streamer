@@ -1,5 +1,9 @@
 # Changelog
 
+## [3.2.1] - 2022-02-13
+### Fixed
+- Use a better way to check if the H264 UVC extension exists. Read the ID from the usb descriptors.
+
 ## [3.2.0] - 2022-02-10
 ### Added
 - Support UVC H264 extension

@@ -5,8 +5,12 @@ port = 8000
 width = 800
 height = 600
 fps = 30
-# capture_format = H264 # H264, MJPGH264, YUYV
-# encoder = /dev/video11 # if you have to encode the stream to H264
+
+# H264, MJPGH264, YUYV
+# capture_format = H264
+
+# if you have to encode the stream to H264
+# encoder = /dev/video11
 
 # you can set any V4L2 control too, list them with the -l option
 h264_profile = High

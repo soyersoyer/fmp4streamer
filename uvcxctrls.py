@@ -188,7 +188,7 @@ def find_unit_id_in_sysfs(device, guid):
         with open(descfile, 'rb') as f:
             descriptors = f.read()
             guid_start = descriptors.find(guid)
-            if guid_start:
+            if guid_start > 0:
                 return descriptors[guid_start - 1]
     except Exception as e:
         logging.warning(f'uvcxctrls: failed to read uvc xu unit id from {descfile}')

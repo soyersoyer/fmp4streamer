@@ -30,9 +30,9 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
 
 # Installation
    ```
-   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.2.0.zip
-   unzip v3.2.0.zip
-   mv fmp4streamer-3.2.0 fmp4streamer
+   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.2.1.zip
+   unzip v3.2.1.zip
+   mv fmp4streamer-3.2.1 fmp4streamer
    ```
 
 # Running 
@@ -87,8 +87,12 @@ port = 8000
 width = 800
 height = 600
 fps = 30
-# capture_format = H264 # H264, MJPGH264, YUYV
-# encoder = /dev/video11 # if you have to encode the stream to H264
+
+# H264, MJPGH264, YUYV
+# capture_format = H264 
+
+# if you have to encode the stream to H264
+# encoder = /dev/video11
 
 # you can set any V4L2 control too, list them with the -l option
 h264_profile = High
