@@ -1,4 +1,4 @@
-import v4l2, ctypes, logging
+import v4l2, ctypes, logging, os.path
 from fcntl import ioctl
 
 #
@@ -228,3 +228,22 @@ def get_uvcx_h264_version(fd, unit_id):
     uvcx_version = uvcx_version_t()
     query_xu_control(fd, unit_id, UVCX_VERSION, UVC_GET_CUR, uvcx_version)
     return uvcx_version.wVersion
+
+# the usb device descriptors file contains the descriptors in a binary format
+# the byte before the extension guid is the extension unit id
+def find_unit_id_in_sysfs(device, guid):
+    device = device.replace('/dev/', '')
+    descfile = f'/sys/class/video4linux/{device}/../../../descriptors'
+    if not os.path.isfile(descfile):
+        return 0
+
+    try:
+        with open(descfile, 'rb') as f:
+            descriptors = f.read()
+            guid_start = descriptors.find(guid)
+            if guid_start > 0:
+                return descriptors[guid_start - 1]
+    except Exception as e:
+        logging.warning(f'uvcx: failed to read uvc xu unit id from {descfile}: {e}')
+
+    return 0

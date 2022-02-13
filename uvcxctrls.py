@@ -1,4 +1,4 @@
-import logging, os.path
+import logging
 
 import uvcx
 
@@ -6,7 +6,7 @@ class UVCXCtrls:
     def __init__(self, device, fd):
         self.device = device
         self.fd = fd
-        self.unit_id = find_unit_id_in_sysfs(device, uvcx.H264_XU_GUID)
+        self.unit_id = uvcx.find_unit_id_in_sysfs(device, uvcx.H264_XU_GUID)
         self.get_device_controls()
 
     def supported(self):
@@ -175,25 +175,6 @@ def find_by_value(menu, value):
         if v == value:
             return k
     return None
-
-def find_unit_id_in_sysfs(device, guid):
-    device = device.replace('/dev/', '')
-    descfile = f'/sys/class/video4linux/{device}/../../../descriptors'
-    if not os.path.isfile(descfile):
-        descfile = f'/sys/class/video4linux/{device}/../../descriptors'
-        if not os.path.isfile(descfile):
-            return 0
-
-    try:
-        with open(descfile, 'rb') as f:
-            descriptors = f.read()
-            guid_start = descriptors.find(guid)
-            if guid_start > 0:
-                return descriptors[guid_start - 1]
-    except Exception as e:
-        logging.warning(f'uvcxctrls: failed to read uvc xu unit id from {descfile}')
-
-    return 0
 
 
 
