@@ -100,9 +100,43 @@ h264_level = 4.2
 h264_i_frame_period = 15
 ```
 
-You can set all the V4L2 or UVCX H264 controls via the configuration file. List them with
+You can set all the V4L2 or UVCX H264 controls via the configuration file. List them with -l option:
 ```
-python3 fmp4streamer.py -l
+$ python3 fmp4streamer.py -l
+Device: /dev/video0
+Name: Logitech Webcam C930e
+Driver: uvcvideo
+
+Controls
+brightness = 128	( default: 128 min: 0 max: 255)
+contrast = 128	( default: 128 min: 0 max: 255)
+saturation = 128	( default: 128 min: 0 max: 255)
+white_balance_temperature_auto = 1	( default: 1 min: 0 max: 1)
+gain = 255	( default: 0 min: 0 max: 255)
+power_line_frequency = 50 Hz	( default: 60 Hz values: 'Disabled' '50 Hz' '60 Hz' )
+white_balance_temperature = 4000	( default: 4000 min: 2000 max: 7500)
+sharpness = 128	( default: 128 min: 0 max: 255)
+backlight_compensation = 0	( default: 0 min: 0 max: 1)
+exposure_auto = Aperture Priority Mode	( default: Aperture Priority Mode values: 'Manual Mode' 'Aperture Priority Mode' )
+exposure_absolute = 250	( default: 250 min: 3 max: 2047)
+exposure_auto_priority = 1	( default: 0 min: 0 max: 1)
+pan_absolute = 0	( default: 0 min: -36000 max: 36000 step: 3600)
+tilt_absolute = 0	( default: 0 min: -36000 max: 36000 step: 3600)
+focus_absolute = 0	( default: 0 min: 0 max: 255 step: 5)
+focus_auto = 1	( default: 1 min: 0 max: 1)
+zoom_absolute = 100	( default: 100 min: 100 max: 400)
+led1_mode = Auto	( default: Off values: 'Off' 'On' 'Blink' 'Auto' )
+led1_frequency = 0	( default: 0 min: 0 max: 255)
+uvcx_h264_stream_mux = H264	( default: None values: 'None' 'H264' )
+uvcx_h264_width = 1280	( default: 1920 min: 160 max: 1920)
+uvcx_h264_height = 720	( default: 1080 min: 120 max: 1080)
+uvcx_h264_frame_interval = 333333	( default: 333333 min: 333333 max: 2000000)
+uvcx_h264_bitrate = 3000000	( default: 3000000 min: 64000 max: 12000000)
+uvcx_h264_rate_control_mode = VBR	( default: CBR values: 'CBR' 'VBR' 'Const QP' )
+uvcx_h264_profile = High	( default: Constrained values: 'Constrained' 'Baseline' 'Main' 'High' )
+uvcx_h264_i_frame_period = 1000	( default: 10000 min: 0 max: 50000)
+
+To set one, put ctrl_name = Value into fmp4streamer.conf under the device
 ```
 
 # Raspberry

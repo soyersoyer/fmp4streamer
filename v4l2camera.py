@@ -176,8 +176,10 @@ class V4L2Camera(Thread):
     def print_ctrls(self):
         self.ctrls.print_ctrls()
         self.uvcx_ctrls.print_ctrls()
+        print()
         if self.encoder:
             self.encoder.print_ctrls()
+            print()
 
     def main_loop(self):
         seq = 0

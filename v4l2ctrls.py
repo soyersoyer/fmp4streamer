@@ -7,6 +7,7 @@ class V4L2Ctrls:
     def __init__(self, device, fd):
         self.device = device
         self.fd = fd
+        self.get_device_cap()
         self.get_device_controls()
 
 
@@ -49,6 +50,16 @@ class V4L2Ctrls:
                 logging.warning(f'Can\'t set {k} to {v} ({e})')
 
 
+    def get_device_cap(self):
+        cap = v4l2.v4l2_capability()
+        try:        
+            ioctl(self.fd, v4l2.VIDIOC_QUERYCAP, cap)
+        except Exception as e:
+            logging.warning(f'v4l2ctrls: VIDIOC_QUERYCAP failed: ({e})')
+            
+        self.card = str(cap.card, 'utf-8')
+        self.driver = str(cap.driver, 'utf-8')
+
     def get_device_controls(self):
         ctrls = []
         strtrans = bytes.maketrans(b' -', b'__')
@@ -86,11 +97,13 @@ class V4L2Ctrls:
         self.ctrls = ctrls
 
     def print_ctrls(self):
-        print(f'\nControls for {self.device}\n')
-        print(f'If you want to set one, just put as ctrl_name = Value into the configfile under the [{self.device}]')
+        print(f'Device: {self.device}')
+        print(f'Name: {self.card}')
+        print(f'Driver: {self.driver}')
+        print(f'\nControls')
         for c in self.ctrls:
             if c.type == v4l2.V4L2_CTRL_TYPE_CTRL_CLASS:
-                print('\n\n' + str(c.name, 'utf-8')+'\n')
+                print('\n' + str(c.name, 'utf-8')+'\n')
             else:
                 print(str(c.name, 'utf-8'), end = ' = ')
                 if c.type in [v4l2.V4L2_CTRL_TYPE_MENU, v4l2.V4L2_CTRL_TYPE_INTEGER_MENU]:

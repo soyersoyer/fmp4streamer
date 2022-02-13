@@ -261,6 +261,7 @@ camera = V4L2Camera(device, h264parser, config)
 
 if list_controls:
     camera.print_ctrls()
+    print(f'To set one, put ctrl_name = Value into {configfile} under the device')
     sys.exit(0)
 
 camera.start()
