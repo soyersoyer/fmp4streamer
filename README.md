@@ -30,9 +30,9 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
 
 # Installation
    ```
-   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.2.1.zip
-   unzip v3.2.1.zip
-   mv fmp4streamer-3.2.1 fmp4streamer
+   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.2.2.zip
+   unzip v3.2.2.zip
+   mv fmp4streamer-3.2.2 fmp4streamer
    ```
 
 # Running 
@@ -192,7 +192,7 @@ You can reduce the latency with lower I-Frame periods. You can set with the `h26
 
 
 # Motivation
-I wanted to stream my raspberry camera to the browser. I found some solution, but I think they are not optimal or too heavy, so I decided to write one which doesn't have too many dependencies.
+I wanted to stream my raspberry camera to the browser. I found some solution, but I think they are not optimal or too heavy (more than 100MB) or too hard to install, so I decided to write one which doesn't have too many dependencies.
 
 The fmp4streamer doesn't have any dependencies other than python and V4L2, but they are installed by default.
 

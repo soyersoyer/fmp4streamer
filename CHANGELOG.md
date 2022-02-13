@@ -1,5 +1,9 @@
 # Changelog
 
+## [3.2.2] - 2022-02-13
+### Added
+- List controls: print device, driver names too
+
 ## [3.2.1] - 2022-02-13
 ### Fixed
 - Use a better way to check if the H264 UVC extension exists. Read the ID from the usb descriptors.
