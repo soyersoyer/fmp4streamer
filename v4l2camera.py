@@ -90,6 +90,10 @@ class V4L2Camera(Thread):
             logging.error(f'{self.device} {capture_format} format not available')
             sys.exit(3)
 
+        if not (fmt.fmt.pix.width == width or fmt.fmt.pix.width == width):
+            logging.error(f'{self.device} {width}x{height} mode not available')
+            sys.exit(3)
+        
 
     def init_fps(self, fps):
         parm = v4l2.v4l2_streamparm()
