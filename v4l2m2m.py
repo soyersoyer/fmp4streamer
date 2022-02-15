@@ -133,8 +133,8 @@ class V4L2M2M(Thread):
         try:
             ctrl = v4l2.v4l2_control(v4l2.V4L2_CID_MPEG_VIDEO_FORCE_KEY_FRAME, 0)
             ioctl(self.fd, v4l2.VIDIOC_S_CTRL, ctrl)
-        except:
-            logging.warning(f'{self.device} Can\'t request keyframe')
+        except Exception as e:
+            logging.warning(f'{self.device}: request_key_frame: failed: {e}')
 
     def print_ctrls(self):
         self.ctrls.print_ctrls()
@@ -175,7 +175,7 @@ class V4L2M2M(Thread):
         try:
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
         except Exception as e:
-            logging.warning(f'{self.device} Can\'t qbuf: {e}')
+            logging.warning(f'{self.device}: write_buf: qbuf failed: {e}')
             return
 
         ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
