@@ -1,4 +1,8 @@
 # Changelog
+## [3.3.1] - 2022-02-17
+### Fixed
+- Set the correct sizeimage in the m2m decoder for suitable DMABUFs for the camera
+
 ## [3.3.0] - 2022-02-16
 ### Added
 - Able to convert MJPG camera stream to H264 via M2M decoder and encoder devices.
