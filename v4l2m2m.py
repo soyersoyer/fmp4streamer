@@ -6,16 +6,19 @@ from v4l2ctrls import V4L2Ctrls
 import v4l2
 
 class V4L2M2M(Thread):
-    def __init__(self, device, params, width, height, input_format, capture_format):
+    def __init__(self, device, pipe, params, width, height,
+        input_format, capture_format, input_memory, capture_memory):
         super(V4L2M2M, self).__init__()
 
         self.device = device
         self.stopped = False
-        self.pipe = None
+        self.pipe = pipe
         self.num_input_bufs = 6
-        self.num_cap_bufs = 12
+        self.num_cap_bufs = 6
         self.input_bufs = []
         self.cap_bufs = []
+
+        self.input_format = input_format
 
         self.fd = os.open(self.device, os.O_RDWR, 0)
 
@@ -26,10 +29,12 @@ class V4L2M2M(Thread):
             width,
             height,
             input_format,
-            capture_format
+            capture_format,
+            input_memory,
+            capture_memory
         )
 
-    def init_device(self, width, height, input_format, capture_format):
+    def init_device(self, width, height, input_format, capture_format, input_memory, capture_memory):
         fmt = v4l2.v4l2_format()
 
         input_pix_fmt = v4l2.get_fourcc(input_format)
@@ -69,8 +74,7 @@ class V4L2M2M(Thread):
         reqbufs = v4l2.v4l2_requestbuffers()
         reqbufs.count = self.num_input_bufs
         reqbufs.type = v4l2.V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
-        reqbufs.memory = v4l2.V4L2_MEMORY_MMAP
-        #reqbufs.memory = v4l2.V4L2_MEMORY_DMABUF
+        reqbufs.memory = v4l2.get_mem_type(input_memory)
         ioctl(self.fd, v4l2.VIDIOC_REQBUFS, reqbufs)
         self.num_input_bufs = reqbufs.count
 
@@ -78,26 +82,27 @@ class V4L2M2M(Thread):
             planes = v4l2.v4l2_planes()
             buf = v4l2.v4l2_buffer()
             buf.type = v4l2.V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
-            buf.memory = v4l2.V4L2_MEMORY_MMAP
-            #buf.memory = v4l2.V4L2_MEMORY_DMABUF
+            buf.memory = reqbufs.memory
             buf.index = i
             buf.length = 1
             buf.m.planes = planes
 
             ioctl(self.fd, v4l2.VIDIOC_QUERYBUF, buf)
 
-            #buf.buffer = mmap.mmap(self.fd, buf.m.planes[0].length,
-            #    flags=mmap.MAP_SHARED,
-            #    prot=mmap.PROT_READ | mmap.PROT_WRITE,
-            #    offset=buf.m.planes[0].m.mem_offset)
+            if buf.memory == v4l2.V4L2_MEMORY_MMAP:
+                buf.buffer = mmap.mmap(self.fd, buf.m.planes[0].length,
+                    flags=mmap.MAP_SHARED,
+                    prot=mmap.PROT_READ | mmap.PROT_WRITE,
+                    offset=buf.m.planes[0].m.mem_offset)
 
-            expbuf = v4l2.v4l2_exportbuffer()
-            expbuf.type = buf.type
-            expbuf.index = buf.index
-            expbuf.flags = os.O_CLOEXEC | os.O_RDWR
-            
-            ioctl(self.fd, v4l2.VIDIOC_EXPBUF, expbuf)
-            buf.fd = expbuf.fd
+                expbuf = v4l2.v4l2_exportbuffer()
+                expbuf.type = buf.type
+                expbuf.index = buf.index
+                expbuf.plane = 0
+                expbuf.flags = os.O_CLOEXEC | os.O_RDWR
+                
+                ioctl(self.fd, v4l2.VIDIOC_EXPBUF, expbuf)
+                buf.fd = expbuf.fd
 
             self.input_bufs.append(buf)
 
@@ -105,7 +110,7 @@ class V4L2M2M(Thread):
         reqbufs = v4l2.v4l2_requestbuffers()
         reqbufs.count = self.num_cap_bufs
         reqbufs.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
-        reqbufs.memory = v4l2.V4L2_MEMORY_MMAP
+        reqbufs.memory = v4l2.get_mem_type(capture_memory)
 
         ioctl(self.fd, v4l2.VIDIOC_REQBUFS, reqbufs)
         self.num_cap_bufs = reqbufs.count
@@ -114,20 +119,47 @@ class V4L2M2M(Thread):
             planes = v4l2.v4l2_planes()
             buf = v4l2.v4l2_buffer()
             buf.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
-            buf.memory = v4l2.V4L2_MEMORY_MMAP
+            buf.memory = reqbufs.memory
             buf.index = i
             buf.length = 1
             buf.m.planes = planes
 
             ioctl(self.fd, v4l2.VIDIOC_QUERYBUF, buf)
 
-            buf.buffer = mmap.mmap(self.fd, buf.m.planes[0].length,
-                flags=mmap.MAP_SHARED,
-                prot=mmap.PROT_READ | mmap.PROT_WRITE,
-                offset=buf.m.planes[0].m.mem_offset)
+            if reqbufs.memory == v4l2.V4L2_MEMORY_MMAP:
+                buf.buffer = mmap.mmap(self.fd, buf.m.planes[0].length,
+                    flags=mmap.MAP_SHARED,
+                    prot=mmap.PROT_READ | mmap.PROT_WRITE,
+                    offset=buf.m.planes[0].m.mem_offset)
+
+                expbuf = v4l2.v4l2_exportbuffer()
+                expbuf.type = buf.type
+                expbuf.index = buf.index
+                expbuf.plane = 0
+                expbuf.flags = os.O_CLOEXEC | os.O_RDWR
+                
+                ioctl(self.fd, v4l2.VIDIOC_EXPBUF, expbuf)
+                buf.fd = expbuf.fd
+
             self.cap_bufs.append(buf)
 
-            ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
+    def connect_buffers(self, prev):
+        for i in range(self.num_input_bufs):
+            buf = self.input_bufs[i]
+            bufprev = prev.cap_bufs[i]
+            if buf.memory == v4l2.V4L2_MEMORY_DMABUF and bufprev.memory == v4l2.V4L2_MEMORY_MMAP:
+                buf.m.planes[0].m.fd = bufprev.fd
+        
+        if not hasattr(self.pipe, 'input_bufs'):
+            return
+        
+        for i in range(self.num_cap_bufs):
+            buf = self.cap_bufs[i]
+            bufp = self.pipe.input_bufs[i]
+            if buf.memory == v4l2.V4L2_MEMORY_DMABUF and bufp.memory == v4l2.V4L2_MEMORY_MMAP:
+                buf.m.planes[0].m.fd = bufp.fd
+
+        self.pipe.connect_buffers(self)
 
     def request_key_frame(self):
         try:
@@ -140,24 +172,20 @@ class V4L2M2M(Thread):
         self.ctrls.print_ctrls()
 
     def capture_loop(self):
+        for buf in self.cap_bufs:
+            ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
+
         seq = 0
 
         while not self.stopped:
             buf = self.cap_bufs[seq % self.num_cap_bufs]
-            #planes = v4l2.v4l2_planes()
-            #buf = v4l2.v4l2_buffer()
-            #buf.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
-            #buf.memory = v4l2.V4L2_MEMORY_MMAP
-            #buf.length = 1
-            #buf.m.planes = planes
-            #print(f"{self.device} capture dqbuf")
+            #print(f"capture {self.device} dqbuf {buf.index}")
             ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
+            #print(f'capture {self.device}: {buf.m.planes[0].bytesused}')
 
             # store bytesused the same place as without MPLANE
             buf.bytesused = buf.m.planes[0].bytesused
 
-            #buf.buffer = self.cap_bufs[buf.index].buffer
-            #print(f"{self.device} frame captured seq {seq}")
             self.pipe.write_buf(seq, buf)
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
             seq += 1
@@ -167,11 +195,22 @@ class V4L2M2M(Thread):
         buf.timestamp = ibuf.timestamp
         buf.timecode = ibuf.timecode
         buf.m.planes[0].bytesused = ibuf.bytesused
-        buf.m.planes[0].length = ibuf.length
-        #buf.m.planes[0].m.fd = ibuf.fd
+        #buf.m.planes[0].length = ibuf.length
 
+        if buf.memory == v4l2.V4L2_MEMORY_MMAP and ibuf.memory == v4l2.V4L2_MEMORY_MMAP:
+            buf.buffer[:ibuf.bytesused] = ibuf.buffer[:ibuf.bytesused]
+
+        # RPI decoder failed to decode with MJPGs with APP0 JFIF so patch to APP4
+        if self.input_format == "MJPG":
+            mbuf = buf.buffer if buf.memory == v4l2.V4L2_MEMORY_MMAP else ibuf.buffer
+            app0_start = mbuf.find(b'\xff\xe0', 0, 4)
+            if app0_start != -1:
+                mbuf[app0_start+1:app0_start+2]=b'\xe5'
+            app0_start = mbuf.find(b'\xff\xe0', 4, 500)
+            if app0_start != -1:
+                mbuf[app0_start+1:app0_start+2]=b'\xe5'
+        
         #print(f"{self.device} writing input buf seq {seq} bytesused {buf.m.planes[0].bytesused} length {buf.m.planes[0].length} fd {buf.m.planes[0].m.fd} buf length {buf.length}")
-        #buf.buffer[:ibuf.bytesused] = ibuf.buffer[:ibuf.bytesused]
         try:
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
         except Exception as e:

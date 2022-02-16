@@ -15,8 +15,9 @@ class V4L2Camera(Thread):
         self.stopped = False
         self.pipe = pipe
         self.encoder = None
-        self.num_buffers = 6
-        self.buffers = []
+        self.decoder = None
+        self.num_cap_bufs = 6
+        self.cap_bufs = []
 
         self.fd = os.open(self.device, os.O_RDWR, 0)
 
@@ -42,16 +43,33 @@ class V4L2Camera(Thread):
         self.uvcx_ctrls = UVCXCtrls(self.device, self.fd)
         self.uvcx_ctrls.setup_uvcx_ctrls(params)
 
+        decoder = params.get('decoder')
+        decoder_input_format = params.get('decoder_input_format', capture_format)
+        decoder_input_memory = params.get('decoder_input_memory', 'MMAP')
+        decoder_capture_memory = params.get('decoder_capture_memory', 'DMABUF')
+
         encoder = params.get('encoder')
-        
+        encoder_input_format = params.get('encoder_input_format', 'YU12' if decoder else capture_format)
+        encoder_input_memory = params.get('encoder_input_memory', 'MMAP')
+        encoder_capture_memory = params.get('encoder_capture_memory', 'MMAP')
+
+
+        capture_memory = params.get('capture_memory', 'DMABUF' if self.encoder or self.decoder else 'MMAP')
+
+
+
         if encoder:
             encoderparams = dict(config.items(encoder) if encoder in config else {})
-            self.encoder = V4L2M2M(encoder, encoderparams, width, height, capture_format, 'H264')
-            self.encoder.pipe = self.pipe
+            self.encoder = V4L2M2M(encoder, self.pipe, encoderparams, width, height, encoder_input_format, 'H264', encoder_input_memory, encoder_capture_memory)
+            self.pipe = self.encoder
 
+        if decoder:
+            decoderparams = dict(config.items(decoder) if decoder in config else {})
+            self.decoder = V4L2M2M(decoder, self.encoder, decoderparams, width, height, decoder_input_format, encoder_input_format, decoder_input_memory, decoder_capture_memory)
+            self.pipe = self.decoder
 
         if capture_format not in ['H264', 'MJPGH264'] and not self.encoder:
-            logging.error(f'{self.device}: capture format is not H264 or MJPGH264, please set the V4L2 M2M encoder device with the encoder config parameter')
+            logging.error(f'{self.device}: capture format is not H264 or MJPGH264, please add the V4L2 M2M encoder (or decoder) devices to the config')
             sys.exit(3)
 
         if capture_format == 'MJPGH264':
@@ -61,6 +79,10 @@ class V4L2Camera(Thread):
             if not self.uvcx_ctrls.h264_muxing_supported():
                 logging.error(f'{self.device}: capture format is MJPGH264, but muxing the H264 into the MJPG is not supported by the device.')
                 sys.exit(3)
+
+        self.init_buffers(capture_memory)
+        self.connect_buffers()
+
 
 
     def init_device(self, width, height, capture_format):
@@ -114,12 +136,12 @@ class V4L2Camera(Thread):
             logging.warning(f'{self.device} Can\'t set fps to {fps} using {tf.denominator / tf.numerator}')
 
 
-    def init_mmap(self):
+    def init_buffers(self, capture_memory):
         req = v4l2.v4l2_requestbuffers()
         
-        req.count = self.num_buffers
+        req.count = self.num_cap_bufs
         req.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
-        req.memory = v4l2.V4L2_MEMORY_MMAP if not self.encoder else v4l2.V4L2_MEMORY_DMABUF
+        req.memory = v4l2.get_mem_type(capture_memory)
 
 
         try:
@@ -128,46 +150,48 @@ class V4L2Camera(Thread):
             logging.error(f'video buffer request failed on {self.device}')
             sys.exit(3)
         
-        if req.count < 2:
+        if req.count != self.num_cap_bufs:
             logging.error(f'Insufficient buffer memory on {self.device}')
             sys.exit(3)
 
-        self.num_buffers = req.count
-        
         for i in range(req.count):
             buf = v4l2.v4l2_buffer()
             buf.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
-            buf.memory = v4l2.V4L2_MEMORY_MMAP if not self.encoder else v4l2.V4L2_MEMORY_DMABUF
+            buf.memory = req.memory
             buf.index = i
             
             ioctl(self.fd, v4l2.VIDIOC_QUERYBUF, buf)
 
             #print(buf.m.offset, buf.length)
 
-            if not self.encoder:
+            if req.memory == v4l2.V4L2_MEMORY_MMAP:
                 buf.buffer = mmap.mmap(self.fd, buf.length,
                     flags=mmap.MAP_SHARED | 0x08000, #MAP_POPULATE
                     prot=mmap.PROT_READ | mmap.PROT_WRITE,
                     offset=buf.m.offset)
-            else:
-                buf.m.fd = self.encoder.input_bufs[i].fd
+
+                expbuf = v4l2.v4l2_exportbuffer()
+                expbuf.type = buf.type
+                expbuf.index = buf.index
+                expbuf.flags = os.O_CLOEXEC | os.O_RDWR
+                
+                ioctl(self.fd, v4l2.VIDIOC_EXPBUF, expbuf)
+                buf.fd = expbuf.fd
+  
+
+            self.cap_bufs.append(buf)
 
 
+    def connect_buffers(self):
+        if not hasattr(self.pipe, 'input_bufs'):
+            return
 
-            #expbuf = v4l2.v4l2_exportbuffer()
-            #expbuf.type = buf.type
-            #expbuf.index = buf.index
-            #expbuf.flags = os.O_CLOEXEC | os.O_RDWR
-            
-            #ioctl(self.fd, v4l2.VIDIOC_EXPBUF, expbuf)
-            #print(f'{self.device} expbuf idx {buf.index} dma fd {expbuf.fd}')
-            #buf.fd = expbuf.fd
-
-
-            self.buffers.append(buf)
-
-            #print(f'{self.device} qbuf {buf.index}')
-            ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
+        for i in range(self.num_cap_bufs):
+            buf = self.cap_bufs[i]
+            bufp = self.pipe.input_bufs[i]
+            if buf.memory == v4l2.V4L2_MEMORY_DMABUF and bufp.memory == v4l2.V4L2_MEMORY_MMAP:
+                buf.m.fd = bufp.fd
+        self.pipe.connect_buffers(self)
 
     def request_key_frame(self):
         if self.encoder:
@@ -181,27 +205,30 @@ class V4L2Camera(Thread):
         self.ctrls.print_ctrls()
         self.uvcx_ctrls.print_ctrls()
         print()
+        if self.decoder:
+            self.decoder.print_ctrls()
+            print()
         if self.encoder:
             self.encoder.print_ctrls()
             print()
 
     def main_loop(self):
+        for buf in self.cap_bufs:
+            ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
+
         seq = 0
         while not self.stopped:
-            buf = self.buffers[seq % self.num_buffers]
+            buf = self.cap_bufs[seq % self.num_cap_bufs]
             #print(f'{self.device} dqbuf {buf.index}')
             ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
-            if not self.encoder:
-                self.pipe.write_buf(seq, buf)
-            else:
-                self.encoder.write_buf(seq, buf)
+            #print(f'{self.device} {buf.bytesused}')
+            self.pipe.write_buf(seq, buf)
             #print(f'{self.device} qbuf {buf.index}')
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
             seq += 1
 
 
     def start_capturing(self):
-        self.init_mmap()
         ioctl(self.fd, v4l2.VIDIOC_STREAMON, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
         self.main_loop()
         ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
@@ -213,11 +240,16 @@ class V4L2Camera(Thread):
     def run(self):
         if self.encoder:
             self.encoder.start()
+        if self.decoder:
+            self.decoder.start()
         self.start_capturing()
 
     # Thread stop
     def stop(self):
         self.stop_capturing()
+        if self.decoder:
+            self.decoder.stop()
+            self.decoder.join()
         if self.encoder:
             self.encoder.stop()
             self.encoder.join()

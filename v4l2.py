@@ -141,8 +141,16 @@ def v4l2_fourcc(a, b, c, d):
 
 def get_fourcc(str):
     if len(str) != 4:
-        raise ValueError('Invalid fourcc: {str}')
+        raise ValueError('v4l2: Invalid fourcc: {str}')
     return v4l2_fourcc(str[0], str[1], str[2], str[3])
+
+def get_mem_type(str):
+    if str == 'MMAP':
+        return V4L2_MEMORY_MMAP
+    if str == 'DMABUF':
+        return V4L2_MEMORY_DMABUF
+    
+    raise ValueError('v4l2: Invalid mem type: {str}, please use MMAP or DMABUF')
 
 v4l2_field = enum
 (

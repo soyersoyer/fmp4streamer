@@ -13,7 +13,10 @@ class V4L2Ctrls:
 
     def setup_v4l2_ctrls(self, params):
         for k, v in params.items():
-            if k in ['width', 'height', 'fps', 'capture_format', 'encoder'] or k.startswith('uvcx_'):
+            if k in ['width', 'height', 'fps', 'capture_format', 'capture_memory',
+            'decoder', 'decoder_input_format', 'decoder_input_memory', 'decoder_capture_memory',
+            'encoder', 'encoder_input_format', 'encoder_input_memory', 'encoder_capture_memory',
+            ] or k.startswith('uvcx_'):
                 continue
             ctrl = find_by_name(self.ctrls, k)
             if ctrl == None:

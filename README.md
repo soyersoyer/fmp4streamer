@@ -14,10 +14,10 @@
 [Changelog](https://github.com/soyersoyer/fmp4streamer/blob/main/CHANGELOG.md)
 
 # What is fmp4streamer
-The fmp4streamer is a Python application designed to stream hardware encoded H.264 from a V4L2 Linux video device directly to a browser.
+Fmp4streamer streams your V4L2 camera directly to any browser as H264 inside fragmanted mp4.
 
 # How does it work
-This python script setups the V4L2 device, reads the H264 or MJPGH264 stream from it (or the YUYV stream and converts to H264 with a M2M V4L2 device), adds some fMP4 (fragmented MP4) header and serves it via HTTP. It works with only one html5 video tag, no js needed. It's pretty lightweight.
+This python script setups the V4L2 device, reads the H264 or MJPGH264 stream from it (or the YUYV, MJPG stream and converts to H264 with a M2M V4L2 device), adds some fMP4 (fragmented MP4) header and serves it via HTTP. It works with only one html5 video tag, no js needed. It's pretty lightweight.
 
 # Capabilities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
@@ -25,6 +25,7 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
 - Works in any Raspberry Pi with a camera module (If you are using the Raspberry OS Bullseye version please read the [Raspberry](#raspberry) section)
 - Able to handle high framerate (60-90 fps) streams
 - Able to handle cameras which only provide H264 inside MJPG format (UVC 1.5 H264 cameras, like Logitech C930e)
+- Able to convert MJPG camera stream to H264 via M2M decoder and encoder devices. (unreleased yet)
 - Able to stream to iPhone and Safari via HLS.
 - Low cpu utilization
 
@@ -80,19 +81,47 @@ cp fmp4streamer.conf.dist fmp4streamer.conf
 Which contains:
 ```ini
 [server]
-listen = 
+listen =
 port = 8000
-
 [/dev/video0]
-width = 800
-height = 600
+width = 1280
+height = 720
 fps = 30
 
-# H264, MJPGH264, YUYV
-# capture_format = H264 
+# Device capture format (default: H264)
+# H264, MJPGH264, YUYV, MJPG, JPEG
+# capture_format = H264
 
-# if you have to encode the stream to H264
+# Decoder M2M device (default: disabled)
+# If you have to decode the stream to a compatible format with the encoder (eg MJPG -> NV12 -> H264)
+# decoder = /dev/video10
+
+# Encoder M2M device (default: disabled)
+# If you have to encode the stream to H264 (eg YUYV -> H264, or MJPG -> NV12 -> H264)
 # encoder = /dev/video11
+
+
+# Buffer memory configurations (MMAP or DMABUF)
+# Sometimes contigous memory is not large enough for hardwares and tuning needed
+
+# default: DMABUF if decoder or encoder else MMAP
+# capture_memory = DMABUF
+
+# decoder_input_memory = MMAP
+# decoder_capture_memory = DMABUF
+# decoder_input_memory = MMAP
+# decoder_capture_memory = MMAP
+
+# Advanced
+
+# Input format for the decoder (default: capture_format)
+# If the capture_format isn't supported by the decoder directly,
+# but it can decode it with another format eg (capture_format = JPEG, decoder_input_format = MJPG)
+# decoder_input_format = MJPG
+
+# Input format for the encoder (default: YU12 if decoder else capture_format)
+# encoder_input_format = YU12
+
 
 # you can set any V4L2 control too, list them with the -l option
 h264_profile = High
@@ -178,14 +207,15 @@ You can reduce the latency with lower I-Frame periods. You can set with the `h26
 
 - Raspberry PI Camera V1
 - Raspberry PI Camera V2
-- Logitech C270 (works with capture_format = YUYV and the Raspiberry pi's H264 encoder)
-- Logitech C920 V1 (046d:082d) (works with capture_format = H264) (Thanks @balazspeczeli for the camera)
-- Logitech C930e (046d:0843) (works with capture_format = MJPGH264)
+- Logitech C270 (works with capture_format = YUYV or MJPG with the Raspiberry pi's H264 encoder)
+- Logitech C920 V1 (046d:082d) (works with capture_format = H264 or MJPG) (Thanks @balazspeczeli for the camera)
+- Logitech C930e (046d:0843) (works with capture_format = MJPGH264 or MJPG)
 
 # Roadmap
 - [x] Use V4L2 instead of raspivid
 - [x] Use V4L2 M2M H264 encoder if the camera doesn't have H264 capability
 - [x] Using UVC H264 extension to support cameras embedding H264 into MJPG capture format
+- [x] Use V4L2 M2M decoder device for MJPG streams
 - [ ] Adding AAC audio to the stream from ALSA
 - [ ] Support multiple cameras
 - [ ] Rewrite to c or Rust
