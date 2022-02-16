@@ -25,15 +25,15 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
 - Works in any Raspberry Pi with a camera module (If you are using the Raspberry OS Bullseye version please read the [Raspberry](#raspberry) section)
 - Able to handle high framerate (60-90 fps) streams
 - Able to handle cameras which only provide H264 inside MJPG format (UVC 1.5 H264 cameras, like Logitech C930e)
-- Able to convert MJPG camera stream to H264 via M2M decoder and encoder devices. (unreleased yet)
+- Able to convert MJPG camera stream to H264 via M2M decoder and encoder devices.
 - Able to stream to iPhone and Safari via HLS.
 - Low cpu utilization
 
 # Installation
    ```
-   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.2.2.zip
-   unzip v3.2.2.zip
-   mv fmp4streamer-3.2.2 fmp4streamer
+   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.3.0.zip
+   unzip v3.3.0.zip
+   mv fmp4streamer-3.3.0 fmp4streamer
    ```
 
 # Running 

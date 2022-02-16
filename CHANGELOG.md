@@ -1,4 +1,9 @@
 # Changelog
+## [3.3.0] - 2022-02-16
+### Added
+- Able to convert MJPG camera stream to H264 via M2M decoder and encoder devices.
+### Fixed
+- Don't start the http server until the first H264 frame arrives
 
 ## [3.2.2] - 2022-02-13
 ### Added
