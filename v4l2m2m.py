@@ -44,30 +44,38 @@ class V4L2M2M(Thread):
         input_pix_fmt = v4l2.get_fourcc(input_format)
 
         fmt.type = v4l2.V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
-        fmt.fmt.pix.width = width
-        fmt.fmt.pix.height = height
-        fmt.fmt.pix.pixelformat = input_pix_fmt
-        fmt.fmt.pix.field = v4l2.V4L2_FIELD_ANY
+        fmt.fmt.pix_mp.width = width
+        fmt.fmt.pix_mp.height = height
+        fmt.fmt.pix_mp.pixelformat = input_pix_fmt
+        fmt.fmt.pix_mp.field = v4l2.V4L2_FIELD_ANY
         # libcamera currently has no means to request the right colour space, hence:
-        # fmt.fmt.pix.colorspace = v4l2.V4L2_COLORSPACE_JPEG
+        # fmt.fmt.pix_mp.colorspace = v4l2.V4L2_COLORSPACE_JPEG
         ioctl(self.fd, v4l2.VIDIOC_S_FMT, fmt)
 
-        if not (fmt.fmt.pix.pixelformat == input_pix_fmt):
+        if not (fmt.fmt.pix_mp.pixelformat == input_pix_fmt):
             logging.error(f'{self.device}: {input_format} input format not available')
+            sys.exit(3)
+
+        if not (fmt.fmt.pix_mp.width == width or fmt.fmt.pix_mp.width == width):
+            logging.error(f'{self.device}: {width}x{height} input mode not available')
             sys.exit(3)
 
         capture_pix_fmt = v4l2.get_fourcc(capture_format)
 
         fmt = v4l2.v4l2_format()
         fmt.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
-        fmt.fmt.pix.width = width
-        fmt.fmt.pix.height = height
-        fmt.fmt.pix.pixelformat = capture_pix_fmt
-        fmt.fmt.pix.field = v4l2.V4L2_FIELD_ANY
+        fmt.fmt.pix_mp.width = width
+        fmt.fmt.pix_mp.height = height
+        fmt.fmt.pix_mp.pixelformat = capture_pix_fmt
+        fmt.fmt.pix_mp.field = v4l2.V4L2_FIELD_ANY
         ioctl(self.fd, v4l2.VIDIOC_S_FMT, fmt)
 
-        if not (fmt.fmt.pix.pixelformat == capture_pix_fmt):
+        if not (fmt.fmt.pix_mp.pixelformat == capture_pix_fmt):
             logging.error(f'{self.device}: {capture_format} capture format not available')
+            sys.exit(3)
+
+        if not (fmt.fmt.pix_mp.width == width or fmt.fmt.pix_mp.width == width):
+            logging.error(f'{self.device}: {width}x{height} capture mode not available')
             sys.exit(3)
 
         # Request that the necessary buffers are allocated. The output queue

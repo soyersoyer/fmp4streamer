@@ -348,6 +348,40 @@ class v4l2_pix_format(ctypes.Structure):
         ('priv', ctypes.c_uint32),
     ]
 
+class v4l2_plane_pix_format(ctypes.Structure):
+    _fields_ = [
+        ('sizeimage', ctypes.c_uint32),
+        ('bytesperline', ctypes.c_uint32),
+        ('reserved', ctypes.c_uint16 * 6),
+    ]
+    _pack_ = True
+
+class v4l2_pix_format_mplane(ctypes.Structure):
+    class _u(ctypes.Union):
+        _fields_ = [
+            ('ycbcr_enc', ctypes.c_uint8),
+            ('hsv_enc', ctypes.c_uint8),
+        ]
+
+    _fields_ = [
+        ('width', ctypes.c_uint32),
+        ('height', ctypes.c_uint32),
+        ('pixelformat', ctypes.c_uint32),
+        ('field', v4l2_field),
+        ('colorspace', v4l2_colorspace),
+        ('plane_fmt', v4l2_plane_pix_format * VIDEO_MAX_PLANES),
+        ('num_planes', ctypes.c_uint8),
+        ('flags', ctypes.c_uint8),
+        ('_u', _u),
+        ('quantization', ctypes.c_uint8),
+        ('xfer_func', ctypes.c_uint8),
+        ('reserved', ctypes.c_uint8 * 7),
+    ]
+
+    _anonymous_ = ('_u',)
+    _pack_ = True
+
+
 # RGB formats
 V4L2_PIX_FMT_RGB332 = v4l2_fourcc('R', 'G', 'B', '1')
 V4L2_PIX_FMT_RGB444 = v4l2_fourcc('R', '4', '4', '4')
@@ -1922,6 +1956,7 @@ class v4l2_format(ctypes.Structure):
     class _u(ctypes.Union):
         _fields_ = [
             ('pix', v4l2_pix_format),
+            ('pix_mp', v4l2_pix_format_mplane),
             ('win', v4l2_window),
             ('vbi', v4l2_vbi_format),
             ('sliced', v4l2_sliced_vbi_format),
