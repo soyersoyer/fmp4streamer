@@ -93,11 +93,11 @@ fps = 30
 # capture_format = H264
 
 # Decoder M2M device (default: disabled)
-# If you have to decode the stream to a compatible format with the encoder (eg MJPG -> NV12 -> H264)
+# To decode the stream to a compatible format with the encoder (eg MJPG -> YU12 -> H264)
 # decoder = /dev/video10
 
 # Encoder M2M device (default: disabled)
-# If you have to encode the stream to H264 (eg YUYV -> H264, or MJPG -> NV12 -> H264)
+# To encode the stream to H264 (eg YUYV -> H264 or MJPG -> YU12 -> H264)
 # encoder = /dev/video11
 
 
