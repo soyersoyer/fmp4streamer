@@ -1,4 +1,4 @@
-import io, socketserver, logging, configparser, getopt, sys
+import io, socketserver, logging, configparser, getopt, sys, traceback
 from http import server
 from time import time
 
@@ -159,6 +159,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                     mp4_writer.add_frame(nalus, frame_secs, frame_usecs)
             except Exception as e:
                 self.log_message(f'Removed streaming client {self.client_address} {e}')
+                traceback.print_exc()
         else:
             self.send_error(404)
             self.end_headers()

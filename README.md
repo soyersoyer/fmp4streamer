@@ -1,5 +1,5 @@
-# fmp4streamer
-[What is fmp4streamer](#what-is-fmp4streamer) |
+# Fmp4streamer
+[What is Fmp4streamer](#what-is-fmp4streamer) |
 [How does it work](#how-does-it-work) |
 [Capabilities](#capabilities) |
 [Installation](#installation) |
@@ -13,8 +13,8 @@
 [Motivation](#motivation) |
 [Changelog](https://github.com/soyersoyer/fmp4streamer/blob/main/CHANGELOG.md)
 
-# What is fmp4streamer
-Fmp4streamer streams your V4L2 camera directly to any browser as H264 inside fragmanted mp4.
+# What is Fmp4streamer
+Fmp4streamer streams your V4L2 camera directly to any browser and media player as H264 inside fragmented mp4.
 
 # How does it work
 This python script setups the V4L2 device, reads the H264 or MJPGH264 stream from it (or the YUYV, MJPG stream and converts to H264 with a M2M V4L2 device), adds some fMP4 (fragmented MP4) header and serves it via HTTP. It works with only one html5 video tag, no js needed. It's pretty lightweight.
@@ -224,7 +224,7 @@ You can reduce the latency with lower I-Frame periods. You can set with the `h26
 # Motivation
 I wanted to stream my raspberry camera to the browser. I found some solution, but I think they are not optimal or too heavy (more than 100MB) or too hard to install, so I decided to write one which doesn't have too many dependencies.
 
-The fmp4streamer doesn't have any dependencies other than python and V4L2, but they are installed by default.
+Fmp4streamer doesn't have any dependencies other than Python and V4L2, but they are installed by default.
 
 It adds fMP4 (fragmented MP4) headers to the h264 stream. It uses the python http server to serve it to the browser.
 
