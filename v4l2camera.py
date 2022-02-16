@@ -45,13 +45,11 @@ class V4L2Camera(Thread):
 
         decoder = params.get('decoder')
         decoder_input_format = params.get('decoder_input_format', capture_format)
-        decoder_input_memory = params.get('decoder_input_memory', 'MMAP')
-        decoder_capture_memory = params.get('decoder_capture_memory', 'DMABUF')
+        decoder_memory = params.get('decoder_memory', 'MMAP-DMABUF')
 
         encoder = params.get('encoder')
         encoder_input_format = params.get('encoder_input_format', 'YU12' if decoder else capture_format)
-        encoder_input_memory = params.get('encoder_input_memory', 'MMAP')
-        encoder_capture_memory = params.get('encoder_capture_memory', 'MMAP')
+        encoder_memory = params.get('encoder_memory', 'MMAP-MMAP')
 
 
         capture_memory = params.get('capture_memory', 'DMABUF' if encoder and not decoder else 'MMAP')
@@ -60,12 +58,12 @@ class V4L2Camera(Thread):
 
         if encoder:
             encoderparams = dict(config.items(encoder) if encoder in config else {})
-            self.encoder = V4L2M2M(encoder, self.pipe, encoderparams, width, height, encoder_input_format, 'H264', encoder_input_memory, encoder_capture_memory)
+            self.encoder = V4L2M2M(encoder, self.pipe, encoderparams, width, height, encoder_input_format, 'H264', encoder_memory)
             self.pipe = self.encoder
 
         if decoder:
             decoderparams = dict(config.items(decoder) if decoder in config else {})
-            self.decoder = V4L2M2M(decoder, self.encoder, decoderparams, width, height, decoder_input_format, encoder_input_format, decoder_input_memory, decoder_capture_memory)
+            self.decoder = V4L2M2M(decoder, self.encoder, decoderparams, width, height, decoder_input_format, encoder_input_format, decoder_memory)
             self.pipe = self.decoder
 
         if capture_format not in ['H264', 'MJPGH264'] and not self.encoder:

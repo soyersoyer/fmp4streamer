@@ -107,10 +107,8 @@ fps = 30
 # default: DMABUF if encoder and not decoder else MMAP
 # capture_memory = DMABUF
 
-# decoder_input_memory = MMAP
-# decoder_capture_memory = DMABUF
-# decoder_input_memory = MMAP
-# decoder_capture_memory = MMAP
+# decoder_memory = MMAP-DMABUF
+# encoder_memory = MMAP-MMAP
 
 # Advanced
 

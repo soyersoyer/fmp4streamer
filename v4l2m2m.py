@@ -11,7 +11,7 @@ JPEG_APP4_END = b'\xe4'
 
 class V4L2M2M(Thread):
     def __init__(self, device, pipe, params, width, height,
-        input_format, capture_format, input_memory, capture_memory):
+        input_format, capture_format, memory_config):
         super(V4L2M2M, self).__init__()
 
         self.device = device
@@ -28,6 +28,8 @@ class V4L2M2M(Thread):
 
         self.ctrls = V4L2Ctrls(self.device, self.fd)
         self.ctrls.setup_v4l2_ctrls(params)
+
+        [input_memory, capture_memory] = memory_config.split('-')
 
         self.init_device(
             width,
