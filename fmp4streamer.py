@@ -266,8 +266,12 @@ if list_controls:
 
 camera.start()
 
+print(f'Waiting for the first h264 frame...', end="", flush=True)
+h264parser.read_frame()
+print(f' ok')
+
 server = StreamingServer((config.get('server', 'listen'), config.getint('server', 'port')), StreamingHandler)
-sys.stdout.write(f'fmp4streamer will now start listening on {server.server_address}\n')
+sys.stdout.write(f'Fmp4streamer will now start listening on {server.server_address}\n')
 server.start()
 camera.stop()
 camera.join()
