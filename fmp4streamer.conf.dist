@@ -22,7 +22,7 @@ fps = 30
 # Buffer memory configurations (MMAP or DMABUF)
 # Sometimes contigous memory is not large enough for hardwares and tuning needed
 
-# default: DMABUF if decoder or encoder else MMAP
+# default: DMABUF if encoder and not decoder else MMAP
 # capture_memory = DMABUF
 
 # decoder_input_memory = MMAP

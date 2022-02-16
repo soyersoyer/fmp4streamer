@@ -54,7 +54,7 @@ class V4L2Camera(Thread):
         encoder_capture_memory = params.get('encoder_capture_memory', 'MMAP')
 
 
-        capture_memory = params.get('capture_memory', 'DMABUF' if self.encoder or self.decoder else 'MMAP')
+        capture_memory = params.get('capture_memory', 'DMABUF' if encoder and not decoder else 'MMAP')
 
 
 
