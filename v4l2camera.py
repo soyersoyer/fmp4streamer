@@ -36,6 +36,8 @@ class V4L2Camera(Thread):
         capture_format_real = capture_format[0:4]
         self.init_device(width, height, capture_format_real)
         self.init_fps(fps)
+
+        sizeimage = self.get_sizeimage()
         
         self.ctrls = V4L2Ctrls(self.device, self.fd)
         self.ctrls.setup_v4l2_ctrls(params)
@@ -52,7 +54,7 @@ class V4L2Camera(Thread):
         encoder_memory = params.get('encoder_memory', 'MMAP-MMAP')
 
 
-        capture_memory = params.get('capture_memory', 'DMABUF' if encoder and not decoder else 'MMAP')
+        capture_memory = params.get('capture_memory', 'DMABUF' if encoder or decoder else 'MMAP')
 
 
 
@@ -63,7 +65,7 @@ class V4L2Camera(Thread):
 
         if decoder:
             decoderparams = dict(config.items(decoder) if decoder in config else {})
-            self.decoder = V4L2M2M(decoder, self.encoder, decoderparams, width, height, decoder_input_format, encoder_input_format, decoder_memory)
+            self.decoder = V4L2M2M(decoder, self.encoder, decoderparams, width, height, decoder_input_format, encoder_input_format, decoder_memory, sizeimage)
             self.pipe = self.decoder
 
         if capture_format not in ['H264', 'MJPGH264'] and not self.encoder:
@@ -133,6 +135,11 @@ class V4L2Camera(Thread):
         if fps != (tf.denominator / tf.numerator):
             logging.warning(f'{self.device} Can\'t set fps to {fps} using {tf.denominator / tf.numerator}')
 
+    def get_sizeimage(self):
+        fmt = v4l2.v4l2_format()
+        fmt.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
+        ioctl(self.fd, v4l2.VIDIOC_G_FMT, fmt)
+        return fmt.fmt.pix.sizeimage
 
     def init_buffers(self, capture_memory):
         req = v4l2.v4l2_requestbuffers()
