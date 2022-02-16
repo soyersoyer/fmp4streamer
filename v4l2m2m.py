@@ -5,6 +5,10 @@ import mmap, os, struct, logging, sys
 from v4l2ctrls import V4L2Ctrls
 import v4l2
 
+JPEG_APP0 = b'\xff\xe0'
+JPEG_APP4 = b'\xff\xe4'
+JPEG_APP4_END = b'\xe4'
+
 class V4L2M2M(Thread):
     def __init__(self, device, pipe, params, width, height,
         input_format, capture_format, input_memory, capture_memory):
@@ -203,12 +207,12 @@ class V4L2M2M(Thread):
         # RPI decoder failed to decode with MJPGs with APP0 JFIF so patch to APP4
         if self.input_format == "MJPG":
             mbuf = buf.buffer if buf.memory == v4l2.V4L2_MEMORY_MMAP else ibuf.buffer
-            app0_start = mbuf.find(b'\xff\xe0', 0, 4)
+            app0_start = mbuf.find(JPEG_APP0, 0, 4)
             if app0_start != -1:
-                mbuf[app0_start+1:app0_start+2]=b'\xe5'
-            app0_start = mbuf.find(b'\xff\xe0', 4, 500)
+                mbuf[app0_start+1:app0_start+2] = JPEG_APP4_END
+            app0_start = mbuf.find(JPEG_APP0, 4, 500)
             if app0_start != -1:
-                mbuf[app0_start+1:app0_start+2]=b'\xe5'
+                mbuf[app0_start+1:app0_start+2] = JPEG_APP4_END
         
         #print(f"{self.device} writing input buf seq {seq} bytesused {buf.m.planes[0].bytesused} length {buf.m.planes[0].length} fd {buf.m.planes[0].m.fd} buf length {buf.length}")
         try:
