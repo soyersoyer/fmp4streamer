@@ -1,4 +1,10 @@
 # Changelog
+## [3.3.2] - 2022-02-17
+### Fixed
+- Fix the bug in resolution check caused invalid resolutions could be set
+- Use 640x480 in the default config for better compatibility
+- Use NV12 instead of YU12 by default for the decoder output, it has the same alignment on the encoder and decoder
+
 ## [3.3.1] - 2022-02-17
 ### Fixed
 - Set the correct sizeimage in the m2m decoder for suitable DMABUFs for the camera
