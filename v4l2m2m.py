@@ -194,14 +194,19 @@ class V4L2M2M(Thread):
         while not self.stopped:
             buf = self.cap_bufs[seq % self.num_cap_bufs]
             #print(f"capture {self.device} dqbuf {buf.index}")
-            ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
-            #print(f'capture {self.device}: {buf.m.planes[0].bytesused}')
+            try:
+                ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
+                #print(f'capture {self.device}: {buf.m.planes[0].bytesused}')
 
-            # store bytesused the same place as without MPLANE
-            buf.bytesused = buf.m.planes[0].bytesused
+                # store bytesused the same place as without MPLANE
+                buf.bytesused = buf.m.planes[0].bytesused
 
-            self.pipe.write_buf(seq, buf)
-            ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
+                self.pipe.write_buf(seq, buf)
+                ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
+            except Exception as e:
+                if not self.stopped:
+                    logging.warning(f'{self.device}: capture_loop: failed: {e}')
+
             seq += 1
 
     def write_buf(self, seq, ibuf):
@@ -227,22 +232,22 @@ class V4L2M2M(Thread):
         #print(f"{self.device} writing input buf seq {seq} bytesused {buf.m.planes[0].bytesused} length {buf.m.planes[0].length} fd {buf.m.planes[0].m.fd} buf length {buf.length}")
         try:
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
+            ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
         except Exception as e:
-            logging.warning(f'{self.device}: write_buf: qbuf failed: {e}')
-            return
+            logging.warning(f'{self.device}: write_buf: failed: {e}')
 
-        ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
 
 
     def start_capturing(self):
         ioctl(self.fd, v4l2.VIDIOC_STREAMON, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE))
         ioctl(self.fd, v4l2.VIDIOC_STREAMON, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE))
         self.capture_loop()
-        ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE))
-        ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE))
+
 
     def stop_capturing(self):
         self.stopped = True
+        ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE))
+        ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE))
 
     # Thread run
     def run(self):

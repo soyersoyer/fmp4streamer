@@ -3,7 +3,7 @@ from http import server
 from time import time
 
 import bmff
-from v4l2camera import V4L2Camera
+from v4l2camera import V4L2Camera, CameraSleeper
 from h264 import H264Parser, H264NALU
 
 def get_index_html(codec):
@@ -152,12 +152,15 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Content-Type', f'video/mp4; codecs="{config.codec()}"')
             self.end_headers()
             try:
+                if not camera.sleeping:
+                    camera.request_key_frame()
+                cameraSleeper.add_client()
                 mp4_writer = MP4Writer(self.wfile, config.width(), config.height(), config.timescale(), h264parser.sps, h264parser.pps)
-                camera.request_key_frame()
                 while True:
                     nalus, frame_secs, frame_usecs = h264parser.read_frame()
                     mp4_writer.add_frame(nalus, frame_secs, frame_usecs)
             except Exception as e:
+                cameraSleeper.remove_client()
                 self.log_message(f'Removed streaming client {self.client_address} {e}')
                 traceback.print_exc()
         else:
@@ -259,6 +262,7 @@ device = config.get_device()
 
 h264parser = H264Parser()
 camera = V4L2Camera(device, h264parser, config)
+cameraSleeper = CameraSleeper(camera)
 
 if list_controls:
     camera.print_ctrls()
@@ -270,6 +274,8 @@ camera.start()
 print(f'Waiting for the first h264 frame...', end="", flush=True)
 h264parser.read_frame()
 print(f' ok')
+
+camera.sleep()
 
 server = StreamingServer((config.get('server', 'listen'), config.getint('server', 'port')), StreamingHandler)
 sys.stdout.write(f'Fmp4streamer will now start listening on {server.server_address}\n')

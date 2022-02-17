@@ -1,5 +1,5 @@
 from fcntl import ioctl
-from threading import Thread
+from threading import Thread, Condition, Lock
 import mmap, os, struct, logging, sys
 
 import v4l2
@@ -10,9 +10,11 @@ from uvcxctrls import UVCXCtrls
 class V4L2Camera(Thread):
     def __init__(self, device, pipe, config):
         super(V4L2Camera, self).__init__()
+        self.condition = Condition()
 
         self.device = device
         self.stopped = False
+        self.sleeping = False
         self.pipe = pipe
         self.encoder = None
         self.decoder = None
@@ -26,6 +28,7 @@ class V4L2Camera(Thread):
         height = int(params.get('height'))
         fps = int(params.get('fps'))
         capture_format = params.get('capture_format', 'H264')
+        self.auto_sleep = config.getboolean(device, 'auto_sleep', fallback=True)
 
         if capture_format == 'MJPGH264':
             params['uvcx_h264_stream_mux'] = 'H264'
@@ -216,12 +219,12 @@ class V4L2Camera(Thread):
             self.encoder.print_ctrls()
             print()
 
-    def main_loop(self):
+    def capture_loop(self):
         for buf in self.cap_bufs:
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
 
         seq = 0
-        while not self.stopped:
+        while not self.stopped and not self.sleeping:
             buf = self.cap_bufs[seq % self.num_cap_bufs]
             #print(f'{self.device} dqbuf {buf.index}')
             ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
@@ -232,13 +235,35 @@ class V4L2Camera(Thread):
             seq += 1
 
 
+
     def start_capturing(self):
-        ioctl(self.fd, v4l2.VIDIOC_STREAMON, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
-        self.main_loop()
-        ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
+        while not self.stopped:
+            # we have to setup the uvcx ctrls before every streamon
+            self.uvcx_ctrls.setup_uvcx_ctrls({})
+            ioctl(self.fd, v4l2.VIDIOC_STREAMON, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
+            self.capture_loop()
+            ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
+            with self.condition:
+                while self.sleeping and not self.stopped:            
+                    self.condition.wait()
 
     def stop_capturing(self):
-        self.stopped = True
+        with self.condition:
+            self.stopped = True
+            self.condition.notify_all()
+        
+
+    def sleep(self):
+        if not self.auto_sleep:
+            return
+        self.sleeping = True
+
+    def wakeup(self):
+        if not self.auto_sleep:
+            return
+        with self.condition:
+            self.sleeping = False
+            self.condition.notify_all()
 
     # Thread run
     def run(self):
@@ -256,3 +281,25 @@ class V4L2Camera(Thread):
             self.decoder.stop()
         if self.encoder:
             self.encoder.stop()
+
+class CameraSleeper:
+    def __init__(self, camera):
+        self.camera = camera
+        self.clients = 0
+        self.clients_lock = Lock()
+
+    def add_client(self):
+        if not self.camera.auto_sleep:
+            return
+        with self.clients_lock:
+            if self.clients == 0:
+                self.camera.wakeup()
+            self.clients += 1
+    
+    def remove_client(self):
+        if not self.camera.auto_sleep:
+            return
+        with self.clients_lock:
+            self.clients -= 1
+            if self.clients == 0:
+                self.camera.sleep()

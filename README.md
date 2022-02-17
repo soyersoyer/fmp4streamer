@@ -26,6 +26,7 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
 - Able to handle high framerate (60-90 fps) streams
 - Able to handle cameras which only provide H264 inside MJPG format (UVC 1.5 H264 cameras, like Logitech C930e)
 - Able to convert MJPG camera stream to H264 via M2M decoder and encoder devices.
+- Able to put the camera into sleep mode when no one is watching the stream.
 - Able to stream to iPhone and Safari via HLS.
 - Low cpu utilization
 
@@ -91,6 +92,10 @@ fps = 30
 # Device capture format (default: H264)
 # H264, MJPGH264, YUYV, MJPG, JPEG
 # capture_format = H264
+
+# Auto Sleep mode (default: yes)
+# Sleep the camera when no one is watching the stream
+# auto_sleep = no
 
 # Decoder M2M device (default: disabled)
 # To decode the stream to a compatible format with the encoder (eg MJPG -> YU12 -> H264)
