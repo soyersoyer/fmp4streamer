@@ -117,8 +117,8 @@ fps = 30
 # but it can decode it with another format eg (capture_format = JPEG, decoder_input_format = MJPG)
 # decoder_input_format = MJPG
 
-# Input format for the encoder (default: YU12 if decoder else capture_format)
-# encoder_input_format = YU12
+# Input format for the encoder (default: NV12 if decoder else capture_format)
+# encoder_input_format = NV12
 
 
 # you can set any V4L2 control too, list them with the -l option

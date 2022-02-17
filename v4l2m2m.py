@@ -11,7 +11,7 @@ JPEG_APP4_END = b'\xe4'
 
 class V4L2M2M(Thread):
     def __init__(self, device, pipe, params, width, height,
-        input_format, capture_format, memory_config, sizeimage = 0):
+        input_format, capture_format, memory_config, input_sizeimage = 0):
         super(V4L2M2M, self).__init__()
 
         self.device = device
@@ -38,10 +38,10 @@ class V4L2M2M(Thread):
             capture_format,
             input_memory,
             capture_memory,
-            sizeimage,
+            input_sizeimage,
         )
 
-    def init_device(self, width, height, input_format, capture_format, input_memory, capture_memory, sizeimage):
+    def init_device(self, width, height, input_format, capture_format, input_memory, capture_memory, input_sizeimage):
 
         input_pix_fmt = v4l2.get_fourcc(input_format)
         out_fmt = v4l2.v4l2_format()
@@ -50,7 +50,7 @@ class V4L2M2M(Thread):
         out_fmt.fmt.pix_mp.height = height
         out_fmt.fmt.pix_mp.pixelformat = input_pix_fmt
         out_fmt.fmt.pix_mp.field = v4l2.V4L2_FIELD_ANY
-        out_fmt.fmt.pix_mp.plane_fmt[0].sizeimage = sizeimage
+        out_fmt.fmt.pix_mp.plane_fmt[0].sizeimage = input_sizeimage            
         # libcamera currently has no means to request the right colour space, hence:
         # fmt.fmt.pix_mp.colorspace = v4l2.V4L2_COLORSPACE_JPEG
         ioctl(self.fd, v4l2.VIDIOC_S_FMT, out_fmt)

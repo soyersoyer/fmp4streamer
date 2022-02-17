@@ -36,8 +36,6 @@ class V4L2Camera(Thread):
         capture_format_real = capture_format[0:4]
         self.init_device(width, height, capture_format_real)
         self.init_fps(fps)
-
-        sizeimage = self.get_sizeimage()
         
         self.ctrls = V4L2Ctrls(self.device, self.fd)
         self.ctrls.setup_v4l2_ctrls(params)
@@ -50,7 +48,7 @@ class V4L2Camera(Thread):
         decoder_memory = params.get('decoder_memory', 'MMAP-DMABUF')
 
         encoder = params.get('encoder')
-        encoder_input_format = params.get('encoder_input_format', 'YU12' if decoder else capture_format)
+        encoder_input_format = params.get('encoder_input_format', 'NV12' if decoder else capture_format)
         encoder_memory = params.get('encoder_memory', 'MMAP-MMAP')
 
 
@@ -64,8 +62,9 @@ class V4L2Camera(Thread):
             self.pipe = self.encoder
 
         if decoder:
+            camera_sizeimage = self.get_sizeimage()
             decoderparams = dict(config.items(decoder) if decoder in config else {})
-            self.decoder = V4L2M2M(decoder, self.encoder, decoderparams, width, height, decoder_input_format, encoder_input_format, decoder_memory, sizeimage)
+            self.decoder = V4L2M2M(decoder, self.encoder, decoderparams, width, height, decoder_input_format, encoder_input_format, decoder_memory, camera_sizeimage)
             self.pipe = self.decoder
 
         if capture_format not in ['H264', 'MJPGH264'] and not self.encoder:
