@@ -42,43 +42,41 @@ class V4L2M2M(Thread):
         )
 
     def init_device(self, width, height, input_format, capture_format, input_memory, capture_memory, sizeimage):
-        fmt = v4l2.v4l2_format()
 
         input_pix_fmt = v4l2.get_fourcc(input_format)
-
-        fmt.type = v4l2.V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
-        fmt.fmt.pix_mp.width = width
-        fmt.fmt.pix_mp.height = height
-        fmt.fmt.pix_mp.pixelformat = input_pix_fmt
-        fmt.fmt.pix_mp.field = v4l2.V4L2_FIELD_ANY
-        fmt.fmt.pix_mp.plane_fmt[0].sizeimage = sizeimage
+        out_fmt = v4l2.v4l2_format()
+        out_fmt.type = v4l2.V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE
+        out_fmt.fmt.pix_mp.width = width
+        out_fmt.fmt.pix_mp.height = height
+        out_fmt.fmt.pix_mp.pixelformat = input_pix_fmt
+        out_fmt.fmt.pix_mp.field = v4l2.V4L2_FIELD_ANY
+        out_fmt.fmt.pix_mp.plane_fmt[0].sizeimage = sizeimage
         # libcamera currently has no means to request the right colour space, hence:
         # fmt.fmt.pix_mp.colorspace = v4l2.V4L2_COLORSPACE_JPEG
-        ioctl(self.fd, v4l2.VIDIOC_S_FMT, fmt)
+        ioctl(self.fd, v4l2.VIDIOC_S_FMT, out_fmt)
 
-        if not (fmt.fmt.pix_mp.pixelformat == input_pix_fmt):
+        if out_fmt.fmt.pix_mp.pixelformat != input_pix_fmt:
             logging.error(f'{self.device}: {input_format} input format not available')
             sys.exit(3)
 
-        if not (fmt.fmt.pix_mp.width == width or fmt.fmt.pix_mp.width == width):
+        if out_fmt.fmt.pix_mp.width != width or out_fmt.fmt.pix_mp.height != height:
             logging.error(f'{self.device}: {width}x{height} input mode not available')
             sys.exit(3)
 
         capture_pix_fmt = v4l2.get_fourcc(capture_format)
+        cap_fmt = v4l2.v4l2_format()
+        cap_fmt.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
+        cap_fmt.fmt.pix_mp.width = width
+        cap_fmt.fmt.pix_mp.height = height
+        cap_fmt.fmt.pix_mp.pixelformat = capture_pix_fmt
+        cap_fmt.fmt.pix_mp.field = v4l2.V4L2_FIELD_ANY
+        ioctl(self.fd, v4l2.VIDIOC_S_FMT, cap_fmt)
 
-        fmt = v4l2.v4l2_format()
-        fmt.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
-        fmt.fmt.pix_mp.width = width
-        fmt.fmt.pix_mp.height = height
-        fmt.fmt.pix_mp.pixelformat = capture_pix_fmt
-        fmt.fmt.pix_mp.field = v4l2.V4L2_FIELD_ANY
-        ioctl(self.fd, v4l2.VIDIOC_S_FMT, fmt)
-
-        if not (fmt.fmt.pix_mp.pixelformat == capture_pix_fmt):
+        if cap_fmt.fmt.pix_mp.pixelformat != capture_pix_fmt:
             logging.error(f'{self.device}: {capture_format} capture format not available')
             sys.exit(3)
 
-        if not (fmt.fmt.pix_mp.width == width or fmt.fmt.pix_mp.width == width):
+        if cap_fmt.fmt.pix_mp.width != width or cap_fmt.fmt.pix_mp.height != height:
             logging.error(f'{self.device}: {width}x{height} capture mode not available')
             sys.exit(3)
 

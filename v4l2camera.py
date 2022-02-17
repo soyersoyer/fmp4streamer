@@ -108,11 +108,11 @@ class V4L2Camera(Thread):
         fmt.fmt.pix.field = v4l2.V4L2_FIELD_ANY
         ioctl(self.fd, v4l2.VIDIOC_S_FMT, fmt)
 
-        if not (fmt.fmt.pix.pixelformat == pix_fmt):
+        if fmt.fmt.pix.pixelformat != pix_fmt:
             logging.error(f'{self.device} {capture_format} format not available')
             sys.exit(3)
 
-        if not (fmt.fmt.pix.width == width or fmt.fmt.pix.width == width):
+        if fmt.fmt.pix.width != width or fmt.fmt.pix.height != height:
             logging.error(f'{self.device} {width}x{height} mode not available')
             sys.exit(3)
         
