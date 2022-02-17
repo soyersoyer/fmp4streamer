@@ -1,4 +1,8 @@
 # Changelog
+## [3.4.0] - 2022-02-17
+### Added
+- Auto sleep mode (sleep the camera when no one is watching the stream) (enabled by default)
+
 ## [3.3.2] - 2022-02-17
 ### Fixed
 - Fix the bug in resolution check caused invalid resolutions could be set

@@ -32,9 +32,9 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
 
 # Installation
    ```
-   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.3.2.zip
-   unzip v3.3.2.zip
-   mv fmp4streamer-3.3.2 fmp4streamer
+   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.4.0.zip
+   unzip v3.4.0.zip
+   mv fmp4streamer-3.4.0 fmp4streamer
    ```
 
 # Running 
@@ -98,11 +98,11 @@ fps = 30
 # auto_sleep = no
 
 # Decoder M2M device (default: disabled)
-# To decode the stream to a compatible format with the encoder (eg MJPG -> YU12 -> H264)
+# To decode the stream to a compatible format with the encoder (eg MJPG -> NV12 -> H264)
 # decoder = /dev/video10
 
 # Encoder M2M device (default: disabled)
-# To encode the stream to H264 (eg YUYV -> H264 or MJPG -> YU12 -> H264)
+# To encode the stream to H264 (eg YUYV -> H264 or MJPG -> NV12 -> H264)
 # encoder = /dev/video11
 
 
