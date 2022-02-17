@@ -251,10 +251,8 @@ class V4L2Camera(Thread):
     # Thread stop
     def stop(self):
         self.stop_capturing()
+        self.join()
         if self.decoder:
             self.decoder.stop()
-            self.decoder.join()
         if self.encoder:
             self.encoder.stop()
-            self.encoder.join()
-        

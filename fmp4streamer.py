@@ -275,4 +275,3 @@ server = StreamingServer((config.get('server', 'listen'), config.getint('server'
 sys.stdout.write(f'Fmp4streamer will now start listening on {server.server_address}\n')
 server.start()
 camera.stop()
-camera.join()

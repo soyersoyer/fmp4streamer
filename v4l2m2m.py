@@ -50,7 +50,7 @@ class V4L2M2M(Thread):
         out_fmt.fmt.pix_mp.height = height
         out_fmt.fmt.pix_mp.pixelformat = input_pix_fmt
         out_fmt.fmt.pix_mp.field = v4l2.V4L2_FIELD_ANY
-        out_fmt.fmt.pix_mp.plane_fmt[0].sizeimage = input_sizeimage            
+        out_fmt.fmt.pix_mp.plane_fmt[0].sizeimage = input_sizeimage
         # libcamera currently has no means to request the right colour space, hence:
         # fmt.fmt.pix_mp.colorspace = v4l2.V4L2_COLORSPACE_JPEG
         ioctl(self.fd, v4l2.VIDIOC_S_FMT, out_fmt)
@@ -244,10 +244,11 @@ class V4L2M2M(Thread):
     def stop_capturing(self):
         self.stopped = True
 
-   # Thread run
+    # Thread run
     def run(self):
         self.start_capturing()
 
     # Thread stop
     def stop(self):
         self.stop_capturing()
+        self.join()
