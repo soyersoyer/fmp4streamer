@@ -180,8 +180,8 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 class Config(configparser.ConfigParser):
     def __init__(self, configfile):
         super(Config, self).__init__({
-            'width': 800,
-            'height': 600,
+            'width': 640,
+            'height': 480,
             'fps': 30,
         })
         self.read_dict({'server': {'listen': '', 'port': 8000}})

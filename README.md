@@ -84,8 +84,8 @@ Which contains:
 listen =
 port = 8000
 [/dev/video0]
-width = 1280
-height = 720
+width = 640
+height = 480
 fps = 30
 
 # Device capture format (default: H264)
