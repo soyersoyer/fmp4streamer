@@ -47,7 +47,7 @@ class V4L2Camera(Thread):
         self.uvcx_ctrls.setup_uvcx_ctrls(params)
 
         decoder = params.get('decoder')
-        decoder_input_format = params.get('decoder_input_format', capture_format)
+        decoder_input_format = params.get('decoder_input_format', "MJPG" if capture_format == "JPEG" else capture_format)
         decoder_memory = params.get('decoder_memory', 'MMAP-DMABUF')
 
         encoder = params.get('encoder')

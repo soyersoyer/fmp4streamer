@@ -22,6 +22,7 @@ fps = 30
 # To encode the stream to H264 (eg YUYV -> H264 or MJPG -> NV12 -> H264)
 # encoder = /dev/video11
 
+# Advanced (change only if you know, what you are doing)
 
 # Buffer memory configurations (MMAP or DMABUF)
 # Sometimes contigous memory is not large enough for hardwares and tuning needed
@@ -32,9 +33,7 @@ fps = 30
 # decoder_memory = MMAP-DMABUF
 # encoder_memory = MMAP-MMAP
 
-# Advanced
-
-# Input format for the decoder (default: capture_format)
+# Input format for the decoder (default: MJPG if capture_format == JPEG else capture_format)
 # If the capture_format isn't supported by the decoder directly,
 # but it can decode it with another format eg (capture_format = JPEG, decoder_input_format = MJPG)
 # decoder_input_format = MJPG
