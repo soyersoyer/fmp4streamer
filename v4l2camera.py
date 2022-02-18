@@ -85,6 +85,18 @@ class V4L2Camera(Thread):
         self.init_buffers(capture_memory)
         self.connect_buffers()
 
+        def check_buffers(elem):
+            if not hasattr(elem.pipe, 'input_bufs'):
+                if elem.cap_bufs[0].memory != v4l2.V4L2_MEMORY_MMAP:
+                    logging.error(f'{elem.device}: the capture memory should be MMAP on the last element in the chain')
+                    sys.exit(3)
+                return
+            if elem.cap_bufs[0].memory == v4l2.V4L2_MEMORY_DMABUF and elem.pipe.input_bufs[0].memory == v4l2.V4L2_MEMORY_DMABUF:
+                logging.error(f'{elem.device}: capture memory is DMABUF and it couldn\'t be passed to another DMABUF buffer, use MMAP at least one side.')
+                sys.exit(3)
+            check_buffers(elem.pipe)
+        check_buffers(self)
+
 
 
     def init_device(self, width, height, capture_format):
