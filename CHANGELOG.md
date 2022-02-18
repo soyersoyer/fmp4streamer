@@ -1,4 +1,8 @@
 # Changelog
+## [3.4.1] - 2022-02-18
+### Fixed
+- Basic checks for buffer configurations
+
 ## [3.4.0] - 2022-02-17
 ### Added
 - Auto sleep mode (sleep the camera when no one is watching the stream) (enabled by default)
