@@ -43,19 +43,29 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
     cd fmp4streamer
     python3 fmp4streamer.py
     ```
-- at startup
+- enable running at startup and start now:
     ```
-    cd fmp4streamer
-    mkdir -p ~/.config/systemd/user
-    cp fmp4streamer.service ~/.config/systemd/user/
-    systemctl --user enable fmp4streamer
-    systemctl --user start fmp4streamer
     loginctl enable-linger pi
+    systemctl --user enable --now ~/fmp4streamer/fmp4streamer.service
     ```
-
-    watch the logs
+- disable running at startup and stop now:
+    ```
+    systemctl --user disable --now ~/fmp4streamer/fmp4streamer.service
+    ```
+- to stop the service
+    ```
+    systemctl --user stop fmp4streamer
+    ```
+- to start the service
+    ```
+    systemctl --user start fmp4streamer
+    ```
+- check the status of the service
     ```
     systemctl --user status fmp4streamer
+    ```
+- watch the logs
+    ```
     journalctl --user-unit fmp4streamer
     ```
 
