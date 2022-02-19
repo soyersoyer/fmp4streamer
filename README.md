@@ -50,7 +50,7 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
     ```
 - disable running at startup and stop now:
     ```
-    systemctl --user disable --now ~/fmp4streamer/fmp4streamer.service
+    systemctl --user disable --now fmp4streamer
     ```
 - to stop the service
     ```
