@@ -45,7 +45,7 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
     ```
 - enable running at startup and start now:
     ```
-    loginctl enable-linger $USER
+    loginctl enable-linger
     systemctl --user enable --now ~/fmp4streamer/fmp4streamer.service
     ```
 - disable running at startup and stop now:
