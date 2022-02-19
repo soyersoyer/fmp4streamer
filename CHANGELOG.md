@@ -1,4 +1,10 @@
 # Changelog
+## [3.4.2] - 2022-02-19
+### Fixed
+- Fix logging to systemd journal (python -u -> unbuffered stdout)
+- Fix systemd service if user is not pi
+- Better systemd handling section in README
+
 ## [3.4.1] - 2022-02-18
 ### Fixed
 - Basic checks for buffer configurations
