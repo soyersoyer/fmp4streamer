@@ -10,10 +10,6 @@ fps = 30
 # H264, MJPGH264, YUYV, MJPG, JPEG
 # capture_format = H264
 
-# Auto Sleep mode (default: yes)
-# Sleep the camera when no one is watching the stream
-# auto_sleep = yes
-
 # Decoder M2M device (default: disabled)
 # To decode the stream to a compatible format with the encoder (eg MJPG -> NV12 -> H264)
 # decoder = /dev/video10
@@ -21,6 +17,10 @@ fps = 30
 # Encoder M2M device (default: disabled)
 # To encode the stream to H264 (eg YUYV -> H264 or MJPG -> NV12 -> H264)
 # encoder = /dev/video11
+
+# Auto Sleep mode (default: yes)
+# Sleep the camera when no one is watching the stream
+# auto_sleep = yes
 
 # Controls
 
