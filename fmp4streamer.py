@@ -278,6 +278,6 @@ print(f' ok')
 camera.sleep()
 
 server = StreamingServer((config.get('server', 'listen'), config.getint('server', 'port')), StreamingHandler)
-sys.stdout.write(f'Fmp4streamer will now start listening on {server.server_address}\n')
+print(f'Fmp4streamer will now start listening on {server.server_address}')
 server.start()
 camera.stop()
