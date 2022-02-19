@@ -201,7 +201,7 @@ If you have a raspberry with an USB camera which supports YUYV format, you can u
 listen = 
 port = 8000
 
-[/dev/video1]
+[/dev/video0]
 width = 640
 height = 480
 fps = 30
@@ -214,6 +214,29 @@ h264_profile = High
 h264_level = 4.2
 h264_i_frame_period = 15
 ```
+
+If you have a raspberry with an USB camera which supports MJPG format, you can use this configuration:
+
+```ini
+[server]
+listen = 
+port = 8000
+
+[/dev/video0]
+width = 640
+height = 480
+fps = 30
+capture_format = MJPG
+decoder = /dev/video10
+encoder = /dev/video11
+
+[/dev/video11]
+# you can set any V4L2 control too, list them with the -l option
+h264_profile = High
+h264_level = 4.2
+h264_i_frame_period = 15
+```
+
 
 # Latency
 
