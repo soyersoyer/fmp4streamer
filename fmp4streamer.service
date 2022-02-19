@@ -2,7 +2,6 @@
 Description=fmp4streamer
 After=network.target
 [Service]
-Environment=PATH=/usr/bin:/usr/local/bin:/bin
 WorkingDirectory=%h/fmp4streamer
 ExecStart=python3 -u fmp4streamer.py
 Restart=always
