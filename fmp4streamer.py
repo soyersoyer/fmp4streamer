@@ -1,4 +1,4 @@
-import io, socketserver, logging, configparser, getopt, sys, traceback
+import io, socketserver, logging, configparser, getopt, sys
 from http import server
 from time import time
 
@@ -12,7 +12,13 @@ def get_index_html(codec):
 <head>
 <meta charset="utf-8">
 <title>fmp4streamer</title>
-<link rel="icon" href="data:;base64,iVBORw0KGgo=">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#303030">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Fmp4streamer">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="icon" href="logo.png">
 <style>
 body {{ margin:0; padding:0; background-color:#303030; }}
 #stream {{
@@ -45,6 +51,23 @@ stream.mp4?{int(time())}
 #EXT-X-ENDLIST
 '''.encode('utf-8')
 
+def get_manifest():
+    return '''{
+  "name": "Fmp4streamer",
+  "short_name": "Fmp4streamer",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#303030",
+  "theme_color": "#303030"
+}
+'''.encode('utf-8')
 
 class MP4Writer:
     def __init__(self, w, width, height, timescale, sps, pps):
@@ -127,6 +150,23 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header('Content-Length', len(indexhtml))
             self.end_headers()
             self.wfile.write(indexhtml)
+        elif self.path == '/manifest.json':
+            self.send_response(200)
+            self.send_header('Age', '0')
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.send_header('Content-Type', 'application/json')
+            data = get_manifest()
+            self.send_header('Content-Length', len(data))
+            self.end_headers()
+            self.wfile.write(data)
+        elif self.path == '/logo.png' or self.path == '/apple-touch-icon.png':
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/png')
+            f = open('logo.png', 'rb')
+            data = f.read()
+            self.send_header('Content-Length', len(data))
+            self.end_headers()
+            self.wfile.write(data)
         elif self.path == '/stream.m3u8':
             self.send_response(200)
             self.send_header('Age', '0')
@@ -162,7 +202,6 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             except Exception as e:
                 cameraSleeper.remove_client()
                 self.log_message(f'Removed streaming client {self.client_address} {e}')
-                traceback.print_exc()
         else:
             self.send_error(404)
             self.end_headers()
