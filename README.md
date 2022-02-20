@@ -30,6 +30,7 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
 - Able to convert MJPG camera stream to H264 via M2M decoder and encoder devices.
 - Able to put the camera into sleep mode when no one is watching the stream.
 - Able to stream to iPhone and Safari via HLS.
+- Add to home screen support for iPhone, Android.
 - Low cpu utilization
 
 # Installation
