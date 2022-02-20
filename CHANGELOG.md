@@ -1,4 +1,8 @@
 # Changelog
+## [Unreleased]
+### Changed
+- Use TCP_NODELAY to disable Nagle's algorithm for lower latency
+
 ## [3.4.3] - 2022-02-20
 ### Added
 - Logo, Favicon, App icon (add to home screen)

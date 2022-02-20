@@ -1,4 +1,4 @@
-import io, socketserver, logging, configparser, getopt, sys
+import io, socketserver, logging, configparser, getopt, sys, socket
 from http import server
 from time import time
 
@@ -210,6 +210,11 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
 class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     allow_reuse_address = True
     daemon_threads = True
+    def server_bind(self):
+        # disable Nagle's algorithm for lower latency
+        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        server.HTTPServer.server_bind(self)
+
     def start(self):
         try:
             self.serve_forever()
