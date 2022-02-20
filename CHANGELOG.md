@@ -1,4 +1,10 @@
 # Changelog
+## [3.4.3] - 2022-02-20
+### Added
+- Logo, Favicon, App icon (add to home screen)
+### Fixed
+- Remove stacktrace from logging
+
 ## [3.4.2] - 2022-02-19
 ### Fixed
 - Fix logging to systemd journal (python -u -> unbuffered stdout)

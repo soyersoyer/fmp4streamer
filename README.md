@@ -32,9 +32,9 @@ This python script setups the V4L2 device, reads the H264 or MJPGH264 stream fro
 
 # Installation
    ```
-   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.4.2.zip
-   unzip v3.4.2.zip
-   mv fmp4streamer-3.4.2 fmp4streamer
+   wget https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.4.3.zip
+   unzip v3.4.3.zip
+   mv fmp4streamer-3.4.3 fmp4streamer
    ```
 
 # Running 
