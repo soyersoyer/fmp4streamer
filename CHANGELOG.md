@@ -1,5 +1,5 @@
 # Changelog
-## [Unreleased]
+## [3.4.4] - 2022-02-20
 ### Changed
 - Use TCP_NODELAY to disable Nagle's algorithm for lower latency
 - Set viewport for mobiles
