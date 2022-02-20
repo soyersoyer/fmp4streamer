@@ -1,5 +1,4 @@
 # Fmp4streamer
-[What is Fmp4streamer](#what-is-fmp4streamer) |
 [How does it work](#how-does-it-work) |
 [Capabilities](#capabilities) |
 [Installation](#installation) |
@@ -13,9 +12,9 @@
 [Motivation](#motivation) |
 [Changelog](https://github.com/soyersoyer/fmp4streamer/blob/main/CHANGELOG.md)
 
-# What is Fmp4streamer
 <img align="left" src="https://github.com/soyersoyer/fmp4streamer/raw/main/logo.png">
 Fmp4streamer streams your V4L2 camera directly to any browser and media player as H264 inside fragmented mp4.
+It is compatible with desktops and mobiles. You can add it your phone's home screen too!
 <br><br><br><br><br>
 
 # How does it work
