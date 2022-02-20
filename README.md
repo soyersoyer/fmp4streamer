@@ -15,10 +15,10 @@
 <img align="left" src="https://github.com/soyersoyer/fmp4streamer/raw/main/logo.png">
 Fmp4streamer streams your V4L2 camera directly to any browser and media player as H264 inside fragmented mp4.
 It is compatible with desktops and mobiles. You can add it your phone's home screen too!
-<br><br><br><br><br>
+<br><br><br>
 
 # How does it work
-This python script setups the V4L2 device, reads the H264 or MJPGH264 stream from it (or the YUYV, MJPG stream and converts to H264 with a M2M V4L2 device), adds some fMP4 (fragmented MP4) header and serves it via HTTP. It works with only one html5 video tag, no js needed. It's pretty lightweight.
+Fmp4streamer setups the V4L2 device, reads the H264 or MJPGH264 stream from it (or the YUYV, MJPG stream and converts to H264 with a M2M V4L2 device), adds MP4 header (fragmented mp4 - fmp4) and serves it via HTTP. On the browser side it works with only one html5 video tag, no js needed. It's pretty lightweight.
 
 # Capabilities
 - Stream to multiple clients simultaneously (usually only limited by your network connection) 
