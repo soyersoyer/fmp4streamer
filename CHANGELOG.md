@@ -1,4 +1,11 @@
 # Changelog
+## [3.4.5] - 2022-03-02
+### Added
+- New UVC H264 XU controls: uvcx_h264_slice_mode, uvcx_h264_slice_units, uvcx_h264_entropy, uvcx_h264_usage, uvcx_h264_leaky_bucket_size
+### Fixed
+- Fixed the glitches if the H264 payload in the MJPG is bigger than 65k
+
+
 ## [3.4.4] - 2022-02-20
 ### Changed
 - Use TCP_NODELAY to disable Nagle's algorithm for lower latency
