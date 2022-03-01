@@ -27,23 +27,41 @@ class H264Parser(object):
 
     def write_buf(self, seq, buf):
         nalus = []
-        start = 0
-        end = buf.bytesused
 
         # find H264 inside MJPG
         if buf.buffer.find(JPEG_SOI, 0, 2) == 0:
             app4_start = buf.buffer.find(JPEG_APP4)
             if app4_start != -1:
-                header_length = struct.unpack_from('<H', buf.buffer, app4_start + 6)
-                payload_start = app4_start + 4 + header_length[0]
-                payload_size = struct.unpack_from('<I', buf.buffer, payload_start)
-                start = payload_start + 4
-                end = start + payload_size[0]
-
-        while start != -1:
-            next = buf.buffer.find(H264NALU.DELIMITER, start + 4, end)
-            nalus.append(memoryview(buf.buffer)[start + 4 : next if next != -1 else end])
-            start = next
+                header_length = struct.unpack_from('<H', buf.buffer, app4_start + 6)[0]
+                payload_start = app4_start + 4 + header_length
+                payload_size = struct.unpack_from('<I', buf.buffer, payload_start)[0]
+                # 4 byte size + 4 byte DELIMITER
+                start = payload_start + 8
+                # 4 byte size + payload + n x segment header (app4+len)
+                end = payload_start + 4 + payload_size + (payload_size >> 16) * 4
+                next_seg_start = app4_start + 65535
+                while start < end:
+                    next = buf.buffer.find(H264NALU.DELIMITER, start, end)
+                    if next == -1:
+                        next = end
+                    if next > next_seg_start:
+                        nalu = buf.buffer[start : next_seg_start]
+                        while next > next_seg_start:
+                            nalu += buf.buffer[next_seg_start + 4 : min(next, next_seg_start + 65535)]
+                            next_seg_start += 65535
+                        nalus.append(nalu)
+                    else:
+                        nalus.append(memoryview(buf.buffer)[start : next])
+                    start = next + 4
+        else:
+            start = 4
+            end = buf.bytesused
+            while start < end:
+                next = buf.buffer.find(H264NALU.DELIMITER, start, end)
+                if next == -1:
+                    next = end
+                nalus.append(memoryview(buf.buffer)[start : next])
+                start = next + 4
 
         if seq == 0:
             for nalu in nalus:
