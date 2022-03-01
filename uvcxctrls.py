@@ -104,6 +104,61 @@ class UVCXCtrls:
                 uvcx.UVC_H264_BMHINTS_IFRAMEPERIOD,
                 'wIFramePeriod',
             ),
+            UVCXCtrl(
+                'uvcx_h264_slice_mode',
+                self.minimum_config.wSliceMode,
+                self.maximum_config.wSliceMode,
+                self.default_config.wSliceMode,
+                uvcx.UVC_H264_BMHINTS_SLICEMODE,
+                'wSliceMode',
+                {
+                    uvcx.UVC_H264_SLICE_MODE_OFF: 'Off',
+                    uvcx.UVC_H264_SLICE_MODE_BITS_PER_SLICE: 'BitsPerSlice',
+                    uvcx.UVC_H264_SLICE_MODE_MBS_PER_SLICE: 'MBsPerSlice',
+                    uvcx.UVC_H264_SLICE_MODE_SLICES_PER_FRAME: 'SlicesPerFrame',
+                }
+            ),
+            UVCXCtrl(
+                'uvcx_h264_slice_units',
+                self.minimum_config.wSliceUnits,
+                self.maximum_config.wSliceUnits,
+                self.default_config.wSliceUnits,
+                uvcx.UVC_H264_BMHINTS_SLICEUNITS,
+                'wSliceUnits',
+            ),
+            UVCXCtrl(
+                'uvcx_h264_entropy',
+                self.minimum_config.bEntropyCABAC,
+                self.maximum_config.bEntropyCABAC,
+                self.default_config.bEntropyCABAC,
+                uvcx.UVC_H264_BMHINTS_ENTROPY,
+                'bEntropyCABAC',
+                {
+                    uvcx.UVC_H264_ENTROPY_CAVLC: 'CAVLC',
+                    uvcx.UVC_H264_ENTROPY_CABAC: 'CABAC',
+                }
+            ),
+            UVCXCtrl(
+                'uvcx_h264_usage',
+                self.minimum_config.bUsageType,
+                self.maximum_config.bUsageType,
+                self.default_config.bUsageType,
+                uvcx.UVC_H264_BMHINTS_USAGE,
+                'bUsageType',
+                {
+                    uvcx.UVC_H264_USAGE_REALTIME: 'Realtime',
+                    uvcx.UVC_H264_USAGE_BROADCAST: 'Broadcast',
+                    uvcx.UVC_H264_USAGE_STORAGE: 'Storage',
+                }
+            ),
+            UVCXCtrl(
+                'uvcx_h264_leaky_bucket_size',
+                self.minimum_config.wLeakyBucketSize,
+                self.maximum_config.wLeakyBucketSize,
+                self.default_config.wLeakyBucketSize,
+                uvcx.UVC_H264_BMHINTS_LEAKY_BKT_SIZE,
+                'wLeakyBucketSize',
+            ),            
         ]
 
     def print_ctrls(self):
