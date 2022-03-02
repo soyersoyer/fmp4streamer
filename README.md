@@ -185,6 +185,11 @@ uvcx_h264_bitrate = 3000000	( default: 3000000 min: 64000 max: 12000000)
 uvcx_h264_rate_control_mode = VBR	( default: CBR values: 'CBR' 'VBR' 'Const QP' )
 uvcx_h264_profile = High	( default: Constrained values: 'Constrained' 'Baseline' 'Main' 'High' )
 uvcx_h264_i_frame_period = 1000	( default: 10000 min: 0 max: 50000)
+uvcx_h264_slice_mode = Off	( default: SlicesPerFrame values: 'Off' 'BitsPerSlice' 'MBsPerSlice' 'SlicesPerFrame' )
+uvcx_h264_slice_units = 4	( default: 4 min: 0 max: 68)
+uvcx_h264_entropy = CAVLC	( default: CAVLC values: 'CAVLC' 'CABAC' )
+uvcx_h264_usage = Realtime	( default: Realtime values: 'Realtime' 'Broadcast' 'Storage' )
+uvcx_h264_leaky_bucket_size = 1000	( default: 1000 min: 500 max: 4000)
 
 To set one, put ctrl_name = Value into fmp4streamer.conf under the device
 ```
