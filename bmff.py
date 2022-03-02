@@ -55,7 +55,43 @@ MVEXSIZE = MEHDSIZE + TREXSIZE + 8
 
 MOOVSIZEWOSPSPPS = MVHDSIZE + TRAKSIZEWOSPSPPS + MVEXSIZE + 8
 
-def write_moov(w, width, height, timescale, sps, pps):
+ROT0MATRIX = pack('9I',
+    0x00010000, 0x00000000, 0x00000000,
+    0x00000000, 0x00010000, 0x00000000,
+    0x00000000, 0x00000000, 0x40000000
+)
+
+ROT90MATRIX = pack('9I',
+    0x00000000, 0x00010000, 0x00000000,
+    0xFFFF0000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x40000000
+)
+
+ROT180MATRIX = pack('9I',
+    0xFFFF0000, 0x00000000, 0x00000000,
+    0x00000000, 0xFFFF0000, 0x00000000,
+    0x00000000, 0x00000000, 0x40000000
+)
+
+ROT270MATRIX = pack('9I',
+    0x00000000, 0xFFFF0000, 0x00000000,
+    0x00010000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x40000000
+)
+
+def write_moov(w, width, height, rot, timescale, sps, pps):
+    if rot == 0:
+        rot_matrix = ROT0MATRIX
+    elif rot == 90:
+        rot_matrix = ROT90MATRIX
+    elif rot == 180:
+        rot_matrix = ROT180MATRIX
+    elif rot == 270:
+        rot_matrix = ROT270MATRIX 
+    else:
+        raise ValueError(f'bmff: write_moov: rotation should be 0, 90, 180, 270 not {rot}')
+
+
     w.write(pack('>I 4s', MOOVSIZEWOSPSPPS + len(sps) + len(pps), b'moov'))
 #    w.write((MOOVSIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
 #    w.write(b'moov')
@@ -99,8 +135,8 @@ def write_moov(w, width, height, timescale, sps, pps):
 #    w.write((TRAKSIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
 #    w.write(b'trak')
     
-    w.write(pack('>I 4s I I I I I I I I H H H H I I I I I I I I I I I', TKHDSIZE, b'tkhd',
-    7, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0x00010000, 0, 0, 0, 0x00010000, 0, 0, 0, 0x40000000,
+    w.write(pack('>I 4s I I I I I I I I H H H H 36s I I', TKHDSIZE, b'tkhd',
+    7, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, rot_matrix,
     int(width)<<16, int(height)<<16))
 #    w.write(TKHDSIZE.to_bytes(4, 'big'))
 #    w.write(b'tkhd')
@@ -395,7 +431,7 @@ def test_h264_to_fmp4(h264file, mp4file):
     fout = open(mp4file, 'wb')
 
     write_ftyp(fout)
-    write_moov(fout, 1280, 720, timescale, sps, pps)
+    write_moov(fout, 1280, 720, 0, timescale, sps, pps)
 
     seq = 1
     for k, nal in enumerate(nals):

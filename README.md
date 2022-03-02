@@ -116,6 +116,10 @@ fps = 30
 # Sleep the camera when no one is watching the stream
 # auto_sleep = yes
 
+# Sets the MP4 TRAK rotation matrix (default: 0)
+# 0, 90, 180, 270
+# rotation = 0
+
 # Controls
 
 # you can set any V4L2 control too, list them with the -l option

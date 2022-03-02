@@ -1,4 +1,8 @@
 # Changelog
+## [Unreleased]
+### Added
+- MP4 rotation
+
 ## [3.4.5] - 2022-03-02
 ### Added
 - New UVC H264 XU controls: uvcx_h264_slice_mode, uvcx_h264_slice_units, uvcx_h264_entropy, uvcx_h264_usage, uvcx_h264_leaky_bucket_size

@@ -71,7 +71,7 @@ def get_manifest():
 '''.encode('utf-8')
 
 class MP4Writer:
-    def __init__(self, w, width, height, timescale, sps, pps):
+    def __init__(self, w, width, height, rotation, timescale, sps, pps):
         if not sps or not pps:
             raise ValueError('MP4Writer: sps, pps NALUs are missing!')
 
@@ -86,6 +86,7 @@ class MP4Writer:
         self.w = w
         self.width = width
         self.height = height
+        self.rotation = rotation
         self.timescale = timescale
         self.timescaleusec = timescale / 1000000
         self.decodetime = 0
@@ -97,7 +98,7 @@ class MP4Writer:
     def write_header(self):
         buf = io.BytesIO()
         bmff.write_ftyp(buf)
-        bmff.write_moov(buf, self.width, self.height, self.timescale, self.sps, self.pps)
+        bmff.write_moov(buf, self.width, self.height, self.rotation, self.timescale, self.sps, self.pps)
         self.w.write(buf.getbuffer())
 
     def add_frame(self, nalus, frame_secs, frame_usecs):
@@ -196,7 +197,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
                 if not camera.sleeping:
                     camera.request_key_frame()
                 cameraSleeper.add_client()
-                mp4_writer = MP4Writer(self.wfile, config.width(), config.height(), config.timescale(), h264parser.sps, h264parser.pps)
+                mp4_writer = MP4Writer(self.wfile, config.width(), config.height(), config.rotation(), config.timescale(), h264parser.sps, h264parser.pps)
                 while True:
                     nalus, frame_secs, frame_usecs = h264parser.read_frame()
                     mp4_writer.add_frame(nalus, frame_secs, frame_usecs)
@@ -256,6 +257,9 @@ class Config(configparser.ConfigParser):
 
     def fps(self):
         return int(self[self.device]['fps'])
+
+    def rotation(self):
+        return int(self[self.device].get('rotation', 0))
 
     def sampleduration(self):
         return 500
