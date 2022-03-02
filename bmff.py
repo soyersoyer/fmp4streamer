@@ -55,42 +55,41 @@ MVEXSIZE = MEHDSIZE + TREXSIZE + 8
 
 MOOVSIZEWOSPSPPS = MVHDSIZE + TRAKSIZEWOSPSPPS + MVEXSIZE + 8
 
-ROT0MATRIX = pack('9I',
+ROT0MATRIX = pack('>9I',
     0x00010000, 0x00000000, 0x00000000,
     0x00000000, 0x00010000, 0x00000000,
     0x00000000, 0x00000000, 0x40000000
 )
 
-ROT90MATRIX = pack('9I',
+ROT90MATRIX = pack('>9I',
     0x00000000, 0x00010000, 0x00000000,
     0xFFFF0000, 0x00000000, 0x00000000,
     0x00000000, 0x00000000, 0x40000000
 )
 
-ROT180MATRIX = pack('9I',
+ROT180MATRIX = pack('>9I',
     0xFFFF0000, 0x00000000, 0x00000000,
     0x00000000, 0xFFFF0000, 0x00000000,
     0x00000000, 0x00000000, 0x40000000
 )
 
-ROT270MATRIX = pack('9I',
+ROT270MATRIX = pack('>9I',
     0x00000000, 0xFFFF0000, 0x00000000,
     0x00010000, 0x00000000, 0x00000000,
     0x00000000, 0x00000000, 0x40000000
 )
 
-def write_moov(w, width, height, rot, timescale, sps, pps):
-    if rot == 0:
+def write_moov(w, width, height, rotation, timescale, sps, pps):
+    if rotation == 0:
         rot_matrix = ROT0MATRIX
-    elif rot == 90:
+    elif rotation == 90:
         rot_matrix = ROT90MATRIX
-    elif rot == 180:
+    elif rotation == 180:
         rot_matrix = ROT180MATRIX
-    elif rot == 270:
+    elif rotation == 270:
         rot_matrix = ROT270MATRIX 
     else:
-        raise ValueError(f'bmff: write_moov: rotation should be 0, 90, 180, 270 not {rot}')
-
+        raise ValueError(f'bmff: write_moov: rotation should be 0, 90, 180, 270 not {rotation}')
 
     w.write(pack('>I 4s', MOOVSIZEWOSPSPPS + len(sps) + len(pps), b'moov'))
 #    w.write((MOOVSIZEWOSPSPPS + len(sps) + len(pps)).to_bytes(4, 'big'))
