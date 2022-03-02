@@ -267,8 +267,10 @@ You can reduce the latency with lower I-Frame periods. You can set with the `h26
 - [x] Use V4L2 M2M decoder device for MJPG streams
 - [ ] Adding AAC audio to the stream from ALSA
 - [ ] Support multiple cameras
-- [ ] Rewrite to c or Rust
-
+- [ ] Rewrite to Rust
+- [ ] Video and audio Recording
+- [ ] Motion detection based on H264 vectors
+- [ ] Configuration over Web UI
 
 # Motivation
 I wanted to stream my raspberry camera to the browser. I found some solution, but I think they are not optimal or too heavy (more than 100MB) or too hard to install, so I decided to write one which doesn't have too many dependencies.
