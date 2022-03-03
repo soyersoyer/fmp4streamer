@@ -34,7 +34,7 @@ Fmp4streamer setups the V4L2 device, reads the H264 or MJPGH264 stream from it (
 
 # Installation
    ```
-   curl -Ls https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.4.5.tar.gz | tar -xvz
+   curl -sSL https://github.com/soyersoyer/fmp4streamer/archive/refs/tags/v3.4.5.tar.gz | tar -xvz
    ln -fns fmp4streamer-3.4.5 fmp4streamer
    ```
 
