@@ -2,6 +2,8 @@
 ## [Unreleased]
 ### Added
 - MP4 rotation
+### Fixed
+- UVCX: Handle if the device is a symlink (like: /dev/v4l/by-id/...)
 
 ## [3.4.5] - 2022-03-02
 ### Added

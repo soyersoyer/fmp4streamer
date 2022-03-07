@@ -244,6 +244,8 @@ def get_uvcx_h264_version(fd, unit_id):
 # the usb device descriptors file contains the descriptors in a binary format
 # the byte before the extension guid is the extension unit id
 def find_unit_id_in_sysfs(device, guid):
+    if os.path.islink(device):
+        device = os.readlink(device)
     device = os.path.basename(device)
     descfile = f'/sys/class/video4linux/{device}/../../../descriptors'
     if not os.path.isfile(descfile):
