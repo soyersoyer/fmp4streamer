@@ -39,7 +39,7 @@ class V4L2Camera(Thread):
         capture_format_real = capture_format[0:4]
         self.init_device(width, height, capture_format_real)
         self.init_fps(fps)
-        
+
         self.ctrls = V4L2Ctrls(self.device, self.fd)
         self.ctrls.setup_v4l2_ctrls(params)
 
@@ -102,13 +102,13 @@ class V4L2Camera(Thread):
     def init_device(self, width, height, capture_format):
         cap = v4l2.v4l2_capability()
         fmt = v4l2.v4l2_format()
-        
+
         ioctl(self.fd, v4l2.VIDIOC_QUERYCAP, cap)
-        
+
         if not (cap.capabilities & v4l2.V4L2_CAP_VIDEO_CAPTURE):
             logging.error(f'{self.device} is not a video capture device')
             sys.exit(3)
-        
+
         if not (cap.capabilities & v4l2.V4L2_CAP_STREAMING):
             logging.error(f'{self.device} does not support streaming i/o')
             sys.exit(3)
@@ -127,16 +127,16 @@ class V4L2Camera(Thread):
             sys.exit(3)
 
         if fmt.fmt.pix.width != width or fmt.fmt.pix.height != height:
-            logging.error(f'{self.device} {width}x{height} mode not available')
+            logging.error(f'{self.device} {width}x{height} resolution not available')
             sys.exit(3)
-        
+
 
     def init_fps(self, fps):
         parm = v4l2.v4l2_streamparm()
         parm.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
         parm.parm.capture.timeperframe.numerator = 1000
         parm.parm.capture.timeperframe.denominator = fps * parm.parm.capture.timeperframe.numerator
-        
+
         try:
             ioctl(self.fd, v4l2.VIDIOC_S_PARM, parm)
         except Exception as e:
@@ -157,7 +157,7 @@ class V4L2Camera(Thread):
 
     def init_buffers(self, capture_memory):
         req = v4l2.v4l2_requestbuffers()
-        
+
         req.count = self.num_cap_bufs
         req.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
         req.memory = v4l2.get_mem_type(capture_memory)
@@ -168,7 +168,7 @@ class V4L2Camera(Thread):
         except Exception:
             logging.error(f'video buffer request failed on {self.device}')
             sys.exit(3)
-        
+
         if req.count != self.num_cap_bufs:
             logging.error(f'Insufficient buffer memory on {self.device}')
             sys.exit(3)
@@ -178,7 +178,7 @@ class V4L2Camera(Thread):
             buf.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
             buf.memory = req.memory
             buf.index = i
-            
+
             ioctl(self.fd, v4l2.VIDIOC_QUERYBUF, buf)
 
             #print(buf.m.offset, buf.length)
@@ -193,10 +193,10 @@ class V4L2Camera(Thread):
                 expbuf.type = buf.type
                 expbuf.index = buf.index
                 expbuf.flags = os.O_CLOEXEC | os.O_RDWR
-                
+
                 ioctl(self.fd, v4l2.VIDIOC_EXPBUF, expbuf)
                 buf.fd = expbuf.fd
-  
+
 
             self.cap_bufs.append(buf)
 

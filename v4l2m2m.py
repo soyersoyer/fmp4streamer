@@ -60,7 +60,7 @@ class V4L2M2M(Thread):
             sys.exit(3)
 
         if out_fmt.fmt.pix_mp.width != width or out_fmt.fmt.pix_mp.height != height:
-            logging.error(f'{self.device}: {width}x{height} input mode not available')
+            logging.error(f'{self.device}: {width}x{height} input resolution not available')
             sys.exit(3)
 
         capture_pix_fmt = v4l2.get_fourcc(capture_format)
@@ -77,7 +77,7 @@ class V4L2M2M(Thread):
             sys.exit(3)
 
         if cap_fmt.fmt.pix_mp.width != width or cap_fmt.fmt.pix_mp.height != height:
-            logging.error(f'{self.device}: {width}x{height} capture mode not available')
+            logging.error(f'{self.device}: {width}x{height} capture resolution not available')
             sys.exit(3)
 
         # Request that the necessary buffers are allocated. The output queue
