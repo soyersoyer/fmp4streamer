@@ -189,32 +189,35 @@ class V4L2M2M(Thread):
         for buf in self.cap_bufs:
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
 
-        seq = 0
+        planes = v4l2.v4l2_planes()
+        qbuf = v4l2.v4l2_buffer()
+        qbuf.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE
+        qbuf.memory = self.cap_bufs[0].memory
+        qbuf.length = 1
+        qbuf.m.planes = planes
 
         while not self.stopped:
-            buf = self.cap_bufs[seq % self.num_cap_bufs]
-            #print(f"capture {self.device} dqbuf {buf.index}")
             try:
-                ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
-                #print(f'capture {self.device}: {buf.m.planes[0].bytesused}')
+                ioctl(self.fd, v4l2.VIDIOC_DQBUF, qbuf)
+
+                buf = self.cap_bufs[qbuf.index]
+                buf.m.planes[0].bytesused = qbuf.m.planes[0].bytesused
+                buf.timestamp = qbuf.timestamp
 
                 # store bytesused the same place as without MPLANE
-                buf.bytesused = buf.m.planes[0].bytesused
+                buf.bytesused = qbuf.m.planes[0].bytesused
 
-                self.pipe.write_buf(seq, buf)
+                self.pipe.write_buf(buf)
                 ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
             except Exception as e:
                 if not self.stopped:
                     logging.warning(f'{self.device}: capture_loop: failed: {e}')
 
-            seq += 1
 
-    def write_buf(self, seq, ibuf):
-        buf = self.input_bufs[seq % self.num_input_bufs]
+    def write_buf(self, ibuf):
+        buf = self.input_bufs[ibuf.index]
         buf.timestamp = ibuf.timestamp
-        buf.timecode = ibuf.timecode
         buf.m.planes[0].bytesused = ibuf.bytesused
-        #buf.m.planes[0].length = ibuf.length
 
         if buf.memory == v4l2.V4L2_MEMORY_MMAP and ibuf.memory == v4l2.V4L2_MEMORY_MMAP:
             buf.buffer[:ibuf.bytesused] = ibuf.buffer[:ibuf.bytesused]
@@ -228,8 +231,8 @@ class V4L2M2M(Thread):
             app0_start = mbuf.find(JPEG_APP0, 4, 500)
             if app0_start != -1:
                 mbuf[app0_start+1:app0_start+2] = JPEG_APP4_END
-        
-        #print(f"{self.device} writing input buf seq {seq} bytesused {buf.m.planes[0].bytesused} length {buf.m.planes[0].length} fd {buf.m.planes[0].m.fd} buf length {buf.length}")
+
+        #print(f"{self.device} writing input buf bytesused {buf.m.planes[0].bytesused} length {buf.m.planes[0].length} fd {buf.m.planes[0].m.fd} buf length {buf.length}")
         try:
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
             ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)

@@ -25,7 +25,7 @@ class H264Parser(object):
         self.frame_secs = 0
         self.frame_usecs = 0
 
-    def write_buf(self, seq, buf):
+    def write_buf(self, buf):
         nalus = []
 
         # find H264 inside MJPG
@@ -63,7 +63,7 @@ class H264Parser(object):
                 nalus.append(memoryview(buf.buffer)[start : next])
                 start = next + 4
 
-        if seq == 0:
+        if not self.sps or not self.pps:
             for nalu in nalus:
                 if len(nalu) and H264NALU.get_type(nalu) == H264NALU.SPSTYPE:
                     self.sps = bytes(nalu)

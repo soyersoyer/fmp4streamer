@@ -235,16 +235,20 @@ class V4L2Camera(Thread):
         for buf in self.cap_bufs:
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
 
-        seq = 0
+        qbuf = v4l2.v4l2_buffer()
+        qbuf.type = v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE
+        qbuf.memory = self.cap_bufs[0].memory
+
         while not self.stopped and not self.sleeping:
-            buf = self.cap_bufs[seq % self.num_cap_bufs]
-            #print(f'{self.device} dqbuf {buf.index}')
-            ioctl(self.fd, v4l2.VIDIOC_DQBUF, buf)
-            #print(f'{self.device} {buf.bytesused}')
-            self.pipe.write_buf(seq, buf)
-            #print(f'{self.device} qbuf {buf.index}')
+            ioctl(self.fd, v4l2.VIDIOC_DQBUF, qbuf)
+
+            buf = self.cap_bufs[qbuf.index]
+            buf.bytesused = qbuf.bytesused
+            buf.timestamp = qbuf.timestamp
+
+            self.pipe.write_buf(buf)
+
             ioctl(self.fd, v4l2.VIDIOC_QBUF, buf)
-            seq += 1
 
 
 
