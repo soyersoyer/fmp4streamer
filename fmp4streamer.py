@@ -1,4 +1,4 @@
-import io, socketserver, logging, configparser, getopt, sys, socket
+import io, socketserver, logging, configparser, getopt, sys, socket, os
 from http import server
 from time import time
 
@@ -233,7 +233,7 @@ class Config(configparser.ConfigParser):
             'height': 480,
             'fps': 30,
         })
-        self.read_dict({'server': {'listen': '', 'port': 8000}})
+        self.read_dict({'server': {'listen': '', 'port': 8000, 'priority': 0}})
 
         if len(self.read(configfile)) == 0:
             logging.warning(f'Couldn\'t read {configfile}, using default config')
@@ -308,6 +308,12 @@ for current_argument, current_value in arguments:
 
 config = Config(configfile)
 device = config.get_device()
+
+priority = config.getint('server', 'priority')
+try:
+    os.setpriority(os.PRIO_PROCESS, 0, priority)
+except Exception as e:
+    logging.warning(f'os.setpriority(os.PRIO_PROCESS, 0, {priority}) failed: {e}')
 
 h264parser = H264Parser()
 camera = V4L2Camera(device, h264parser, config)
