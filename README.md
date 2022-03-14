@@ -259,7 +259,8 @@ You can reduce the latency with lower I-Frame periods. You can set with the `h26
 - Logitech C270 (works with capture_format = YUYV or MJPG with the Raspiberry pi's H264 encoder)
 - Logitech C920 V1 (046d:082d) (works with capture_format = H264 or YUYV or  MJPG) (Thanks @balazspeczeli for the camera)
 - Logitech C930e (046d:0843) (works with capture_format = MJPGH264 or YUYV or MJPG)
-- Logitech BRIO (046d:085e) (works with capture_format = YUYV, MJPG)
+- Logitech BRIO (046d:085e) (works with capture_format = YUYV or MJPG)
+- Razer Kiyo Pro (1532:0e05) (HDR, HDR mode, AF mode, FoV controls added) (works with capture_format = YUYV) (H264 format has issues, ticket opened)
 
 # Roadmap
 - [x] Use V4L2 instead of raspivid

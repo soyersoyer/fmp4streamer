@@ -2,7 +2,7 @@ import logging
 
 import uvcx
 
-class UVCXCtrls:
+class UVCXH264Ctrls:
     def __init__(self, device, fd):
         self.device = device
         self.fd = fd
@@ -20,10 +20,10 @@ class UVCXCtrls:
             self.ctrls = []
             return
 
-        self.default_config = uvcx.get_default_config(self.fd, self.unit_id)
-        self.minimum_config = uvcx.get_minimum_config(self.fd, self.unit_id)
-        self.maximum_config = uvcx.get_maximum_config(self.fd, self.unit_id)
-        self.current_config = uvcx.get_current_config(self.fd, self.unit_id)
+        self.default_config = uvcx.get_h264_default_config(self.fd, self.unit_id)
+        self.minimum_config = uvcx.get_h264_minimum_config(self.fd, self.unit_id)
+        self.maximum_config = uvcx.get_h264_maximum_config(self.fd, self.unit_id)
+        self.current_config = uvcx.get_h264_current_config(self.fd, self.unit_id)
         self.ctrls = [
             UVCXCtrl(
                 'uvcx_h264_stream_mux',
@@ -178,32 +178,32 @@ class UVCXCtrls:
                     print('%a' % v, end = ' ')
                 print(')')
 
-    def setup_uvcx_ctrls(self, params):
+    def setup_ctrls(self, params):
         if not self.supported():
             return
 
         for k, v in params.items():
-            if not k.startswith('uvcx_'):
+            if not k.startswith('uvcx_h264_'):
                 continue
             ctrl = find_by_name(self.ctrls, k)
             if ctrl == None:
-                logging.warning(f'uvcxctrls: can\'t find {k} uvcx control')
+                logging.warning(f'UVCXH264Ctrls: can\'t find {k} control')
                 continue
             if ctrl.menu:
                 menukey  = find_by_value(ctrl.menu, v)
                 if menukey == None:
-                    logging.warning(f'uvcxctrls: can\'t find {v} in {ctrl.menu}')
+                    logging.warning(f'UVCXH264Ctrls: can\'t find {v} in {list(ctrl.menu.values())}')
                     continue
                 setattr(self.current_config, ctrl.sname, menukey)
             else:
                 setattr(self.current_config, ctrl.sname, int(v))
             self.current_config.bmHints |= ctrl.hint
 
-        uvcx.video_commit(self.fd, self.unit_id, self.current_config)
-        current = uvcx.get_current_config(self.fd, self.unit_id)
+        uvcx.set_h264_config(self.fd, self.unit_id, self.current_config)
+        current = uvcx.get_h264_current_config(self.fd, self.unit_id)
 
         for k, v in params.items():
-            if not k.startswith('uvcx_'):
+            if not k.startswith('uvcx_h264_'):
                 continue
             ctrl = find_by_name(self.ctrls, k)
             if ctrl == None:
@@ -214,10 +214,106 @@ class UVCXCtrls:
                 desired_value = ctrl.menu.get(desired_value, desired_value)
                 current_value = ctrl.menu.get(current_value, current_value)
             if current_value != desired_value:
-                logging.warning(f'uvcxctrls: failed to set {k} to {desired_value}, current value {current_value}\n')
+                logging.warning(f'UVCXH264Ctrls: failed to set {k} to {desired_value}, current value {current_value}\n')
 
     def request_h264_idr(self):
         uvcx.request_h264_frame_type(self.fd, self.unit_id, uvcx.PICTURE_TYPE_IDR)
+
+
+class UVCXKiyoProCtrls:
+    def __init__(self, device, fd):
+        self.device = device
+        self.fd = fd
+        self.unit_id = uvcx.find_unit_id_in_sysfs(device, uvcx.UVC_EU1_GUID)
+        self.usb_ids = uvcx.find_usb_ids_in_sysfs(device)
+        self.get_device_controls()
+
+    def supported(self):
+        return self.unit_id != 0 and self.usb_ids == '1532:0e05'
+
+    def get_device_controls(self):
+        if not self.supported():
+            self.ctrls = []
+            return
+
+        # getting the values doesn't work in this way, maybe later in newer firmwares
+        #current = uvcx.to_buf(uvcx.UVC_KIYO_PRO_LOAD)
+        #uvcx.query_xu_control(self.fd, self.unit_id, uvcx.UVCX_VIDEO_CONFIG_COMMIT, uvcx.UVC_GET_CUR, current)
+        #print('current:', list(current))
+
+        self.ctrls = [
+            KIYOCtrl(
+                'uvcx_kiyo_pro_af_mode',
+                {
+                    uvcx.UVC_KIYO_PRO_AF_PASSIVE: 'Passive',
+                    uvcx.UVC_KIYO_PRO_AF_RESPONSIVE: 'Responsive',
+                }
+            ),
+            KIYOCtrl(
+                'uvcx_kiyo_pro_hdr',
+                {
+                    uvcx.UVC_KIYO_PRO_HDR_OFF: 'Off',
+                    uvcx.UVC_KIYO_PRO_HDR_ON: 'On',
+                }
+            ),
+            KIYOCtrl(
+                'uvcx_kiyo_pro_hdr_mode',
+                {
+                    uvcx.UVC_KIYO_PRO_HDR_BRIGHT: 'Bright',
+                    uvcx.UVC_KIYO_PRO_HDR_DARK: 'Dark',
+                }
+            ),
+            KIYOCtrl(
+                'uvcx_kiyo_pro_fov',
+                {
+                    uvcx.UVC_KIYO_PRO_FOV_WIDE: 'Wide',
+                    uvcx.UVC_KIYO_PRO_FOV_MEDIUM: 'Medium',
+                    uvcx.UVC_KIYO_PRO_FOV_NARROW: 'Narrow',
+                }
+            ),
+        ]
+        self.befores = {
+            uvcx.UVC_KIYO_PRO_FOV_MEDIUM: uvcx.UVC_KIYO_PRO_FOV_MEDIUM_PRE,
+            uvcx.UVC_KIYO_PRO_FOV_NARROW: uvcx.UVC_KIYO_PRO_FOV_NARROW_PRE,
+        }
+    
+    def print_ctrls(self):
+        for c in self.ctrls:
+            print(c.name, end = ' = ')
+            valmenu = c.menu.get(c.value)
+            print(f'{valmenu if valmenu else "Unset [Camera setting]"}\t(', end = ' ')
+            print('values:', end = ' ')
+            for k, v in c.menu.items():
+                print('%a' % v, end = ' ')
+            print(')')
+
+    def setup_ctrls(self, params):
+        if not self.supported():
+            return
+
+        for k, v in params.items():
+            if not k.startswith('uvcx_kiyo_pro_'):
+                continue
+            ctrl = find_by_name(self.ctrls, k)
+            if ctrl == None:
+                logging.warning(f'UVCXKiyoProCtrls: can\'t find {k} control')
+                continue
+            menukey = find_by_value(ctrl.menu, v)
+            if menukey == None:
+                logging.warning(f'UVCXKiyoProCtrls: can\'t find {v} in {list(ctrl.menu.values())}')
+                continue
+            ctrl.value = menukey
+
+            before = self.befores.get(ctrl.value)
+            if before:
+                uvcx.query_xu_control(self.fd, self.unit_id, uvcx.UVCX_VIDEO_CONFIG_PROBE, uvcx.UVC_SET_CUR, uvcx.to_buf(before))
+            
+            uvcx.query_xu_control(self.fd, self.unit_id, uvcx.UVCX_VIDEO_CONFIG_PROBE, uvcx.UVC_SET_CUR, uvcx.to_buf(ctrl.value))
+
+        # Don't need to save the state into the camera, uncomment if you want to save
+        #uvcx.query_xu_control(self.fd, self.unit_id, uvcx.UVCX_VIDEO_CONFIG_PROBE, uvcx.UVC_SET_CUR, uvcx.to_buf(uvcx.UVC_KIYO_PRO_SAVE))
+
+
 
 def find_by_name(ctrls, name):
     for c in ctrls:
@@ -241,4 +337,10 @@ class UVCXCtrl:
         self.default = default
         self.hint = hint
         self.sname = sname
+        self.menu = menu
+
+class KIYOCtrl:
+    def __init__(self, name, menu = None):
+        self.name = name
+        self.value = None
         self.menu = menu
