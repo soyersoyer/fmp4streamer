@@ -5,7 +5,7 @@ import mmap, os, struct, logging, sys
 import v4l2
 from v4l2ctrls import V4L2Ctrls
 from v4l2m2m import V4L2M2M
-from uvcxh264ctrls import H264Ctrls
+from uvcxh264 import H264Ctrls
 from uvcxlogitech import LogitechCtrls
 from uvcxkiyopro import KiyoProCtrls
 
