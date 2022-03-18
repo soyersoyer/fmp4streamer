@@ -6,6 +6,7 @@ import v4l2
 from v4l2ctrls import V4L2Ctrls
 from v4l2m2m import V4L2M2M
 from uvcxctrls import UVCXH264Ctrls, UVCXKiyoProCtrls
+from uvcxlogitech import LogitechCtrls
 
 class V4L2Camera(Thread):
     def __init__(self, device, pipe, config):
@@ -45,6 +46,9 @@ class V4L2Camera(Thread):
 
         self.uvcx_h264_ctrls = UVCXH264Ctrls(self.device, self.fd)
         self.uvcx_h264_ctrls.setup_ctrls(params)
+
+        self.uvcx_logitech_ctrls = LogitechCtrls(self.device, self.fd)
+        self.uvcx_logitech_ctrls.setup_ctrls(params)
 
         self.uvcx_kiyo_pro_ctrls = UVCXKiyoProCtrls(self.device, self.fd)
         self.uvcx_kiyo_pro_ctrls.setup_ctrls(params)
@@ -225,6 +229,7 @@ class V4L2Camera(Thread):
 
     def print_ctrls(self):
         self.ctrls.print_ctrls()
+        self.uvcx_logitech_ctrls.print_ctrls()
         self.uvcx_h264_ctrls.print_ctrls()
         self.uvcx_kiyo_pro_ctrls.print_ctrls()
         print()
