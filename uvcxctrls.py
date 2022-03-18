@@ -271,6 +271,13 @@ class UVCXKiyoProCtrls:
                     uvcx.UVC_KIYO_PRO_FOV_NARROW: 'Narrow',
                 }
             ),
+            KIYOCtrl(
+                'uvcx_kiyo_pro_grayscale',
+                {
+                    uvcx.UVC_KIYO_PRO_GRAYSCALE_OFF: 'Off',
+                    uvcx.UVC_KIYO_PRO_GRAYSCALE_ON: 'On',
+                }
+            ),
         ]
         self.befores = {
             uvcx.UVC_KIYO_PRO_FOV_MEDIUM: uvcx.UVC_KIYO_PRO_FOV_MEDIUM_PRE,
