@@ -118,11 +118,11 @@ class KiyoProCtrls:
                 continue
             ctrl = find_by_name(self.ctrls, k)
             if ctrl == None:
-                logging.warning(f'UVCXKiyoProCtrls: can\'t find {k} control')
+                logging.warning(f'KiyoProCtrls: can\'t find {k} control in {[c.name for c in self.ctrls]}')
                 continue
             menukey = find_by_value(ctrl.menu, v)
             if menukey == None:
-                logging.warning(f'UVCXKiyoProCtrls: can\'t find {v} in {list(ctrl.menu.values())}')
+                logging.warning(f'KiyoProCtrls: can\'t find {v} in {list(ctrl.menu.values())}')
                 continue
             ctrl.value = menukey
 

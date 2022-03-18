@@ -97,7 +97,7 @@ class LogitechCtrls:
             if ctrl.menu:
                 menukey  = find_by_value(ctrl.menu, v)
                 if menukey == None:
-                    logging.warning(f'LogitechCtrls: can\'t find {v} in {[v for v in ctrl.menu.values()]}')
+                    logging.warning(f'LogitechCtrls: can\'t find {v} in {list(ctrl.menu.values())}')
                     continue
                 desired = menukey
             else:
