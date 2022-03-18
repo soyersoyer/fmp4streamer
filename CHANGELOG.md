@@ -4,9 +4,11 @@
 - MP4 rotation
 - Ability to set process priority
 - Razer Kiyo Pro controls
+- Logitech LED controls without uvcdynctrl
 ### Fixed
 - UVCX: Handle if the device is a symlink (like: /dev/v4l/by-id/...)
 - Handle V4L2 buffers which are not in order to support BRIO
+- Reduce frame drops
 
 ## [3.4.5] - 2022-03-02
 ### Added
