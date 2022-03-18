@@ -57,11 +57,6 @@ UVC_GET_DEF      = 0x87
 # H264 extension GUID a29e7641-de04-47e3-8b2b-f4341aff003b
 H264_XU_GUID = b'\x41\x76\x9e\xa2\x04\xde\xe3\x47\x8b\x2b\xf4\x34\x1a\xff\x00\x3b'
 
-# UVC EU1 extension GUID 23e49ed0-1178-4f31-ae52-d2fb8a8d3b48
-UVC_EU1_GUID = b'\xd0\x9e\xe4\x23\x78\x11\x31\x4f\xae\x52\xd2\xfb\x8a\x8d\x3b\x48'
-
-# UVC EU2 extension GUID 2c49d16a-32b8-4485-3ea8-643a152362f2
-UVC_EU2_GUID = b'\x6a\xd1\x49\x2c\xb8\x32\x85\x44\x3e\xa8\x64\x3a\x15\x23\x62\xf2'
 
 UVCX_VIDEO_CONFIG_PROBE		 = 0x01
 UVCX_VIDEO_CONFIG_COMMIT	 = 0x02
@@ -133,32 +128,6 @@ STREAM_MUX_CONTAINER_MJPEG = 0x40
 STREAM_MUX_H264_ENABLED = STREAM_MUX_H264 | STREAM_MUX_ENABLED
 STREAM_MUX_YUYV_ENABLED = STREAM_MUX_YUYV | STREAM_MUX_ENABLED
 STREAM_MUX_NV12_ENABLED = STREAM_MUX_NV12 | STREAM_MUX_ENABLED
-
-UVC_KIYO_PRO_AF_RESPONSIVE = b'\xff\x06\x00\x00\x00\x00\x00\x00'
-UVC_KIYO_PRO_AF_PASSIVE =    b'\xff\x06\x01\x00\x00\x00\x00\x00'
-
-UVC_KIYO_PRO_HDR_OFF =       b'\xff\x02\x00\x00\x00\x00\x00\x00'
-UVC_KIYO_PRO_HDR_ON =        b'\xff\x02\x01\x00\x00\x00\x00\x00'
-
-UVC_KIYO_PRO_HDR_DARK =      b'\xff\x07\x00\x00\x00\x00\x00\x00'
-UVC_KIYO_PRO_HDR_BRIGHT =    b'\xff\x07\x01\x00\x00\x00\x00\x00'
-
-UVC_KIYO_PRO_FOV_WIDE =       b'\xff\x01\x00\x03\x00\x00\x00\x00'
-UVC_KIYO_PRO_FOV_MEDIUM_PRE = b'\xff\x01\x00\x03\x01\x00\x00\x00'
-UVC_KIYO_PRO_FOV_MEDIUM =     b'\xff\x01\x01\x03\x01\x00\x00\x00'
-UVC_KIYO_PRO_FOV_NARROW_PRE = b'\xff\x01\x00\x03\x02\x00\x00\x00'
-UVC_KIYO_PRO_FOV_NARROW =     b'\xff\x01\x01\x03\x02\x00\x00\x00'
-
-UVC_KIYO_PRO_GRAYSCALE_OFF =  b'\xff\x03\x00\x00\x00\x00\x00\x00'
-UVC_KIYO_PRO_GRAYSCALE_ON =   b'\xff\x03\x01\x00\x00\x00\x00\x00'
-
-# Unknown yet, the synapse sends it in start
-UVC_KIYO_PRO_UNKNOWN =       b'\xff\x04\x00\x00\x00\x00\x00\x00'
-
-# save previous values to the camera
-UVC_KIYO_PRO_SAVE =          b'\xc0\x03\xa8\x00\x00\x00\x00\x00'
-
-UVC_KIYO_PRO_LOAD =          b'\x00\x00\x00\x00\x00\x00\x00\x00'
 
 def to_buf(b):
     return ctypes.create_string_buffer(b)

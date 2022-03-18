@@ -5,8 +5,9 @@ import mmap, os, struct, logging, sys
 import v4l2
 from v4l2ctrls import V4L2Ctrls
 from v4l2m2m import V4L2M2M
-from uvcxctrls import UVCXH264Ctrls, UVCXKiyoProCtrls
+from uvcxh264ctrls import H264Ctrls
 from uvcxlogitech import LogitechCtrls
+from uvcxkiyopro import KiyoProCtrls
 
 class V4L2Camera(Thread):
     def __init__(self, device, pipe, config):
@@ -44,14 +45,14 @@ class V4L2Camera(Thread):
         self.ctrls = V4L2Ctrls(self.device, self.fd)
         self.ctrls.setup_v4l2_ctrls(params)
 
-        self.uvcx_h264_ctrls = UVCXH264Ctrls(self.device, self.fd)
-        self.uvcx_h264_ctrls.setup_ctrls(params)
+        self.h264_ctrls = H264Ctrls(self.device, self.fd)
+        self.h264_ctrls.setup_ctrls(params)
 
-        self.uvcx_logitech_ctrls = LogitechCtrls(self.device, self.fd)
-        self.uvcx_logitech_ctrls.setup_ctrls(params)
+        self.logitech_ctrls = LogitechCtrls(self.device, self.fd)
+        self.logitech_ctrls.setup_ctrls(params)
 
-        self.uvcx_kiyo_pro_ctrls = UVCXKiyoProCtrls(self.device, self.fd)
-        self.uvcx_kiyo_pro_ctrls.setup_ctrls(params)
+        self.kiyo_pro_ctrls = KiyoProCtrls(self.device, self.fd)
+        self.kiyo_pro_ctrls.setup_ctrls(params)
 
         decoder = params.get('decoder')
         decoder_input_format = params.get('decoder_input_format', "MJPG" if capture_format == "JPEG" else capture_format)
@@ -82,10 +83,10 @@ class V4L2Camera(Thread):
             sys.exit(3)
 
         if capture_format == 'MJPGH264':
-            if not self.uvcx_h264_ctrls.supported():
+            if not self.h264_ctrls.supported():
                 logging.error(f'{self.device}: capture format is MJPGH264, but the H264 UVC extension is not supported by the device. Muxing the H264 into the MJPG is impossible.')
                 sys.exit(3)
-            if not self.uvcx_h264_ctrls.h264_muxing_supported():
+            if not self.h264_ctrls.h264_muxing_supported():
                 logging.error(f'{self.device}: capture format is MJPGH264, but muxing the H264 into the MJPG is not supported by the device.')
                 sys.exit(3)
 
@@ -222,16 +223,16 @@ class V4L2Camera(Thread):
     def request_key_frame(self):
         if self.encoder:
             self.encoder.request_key_frame()
-        elif self.uvcx_h264_ctrls.supported():
-            self.uvcx_h264_ctrls.request_h264_idr()
+        elif self.h264_ctrls.supported():
+            self.h264_ctrls.request_h264_idr()
         else:
             self.ctrls.request_key_frame()
 
     def print_ctrls(self):
         self.ctrls.print_ctrls()
-        self.uvcx_logitech_ctrls.print_ctrls()
-        self.uvcx_h264_ctrls.print_ctrls()
-        self.uvcx_kiyo_pro_ctrls.print_ctrls()
+        self.logitech_ctrls.print_ctrls()
+        self.h264_ctrls.print_ctrls()
+        self.kiyo_pro_ctrls.print_ctrls()
         print()
         if self.decoder:
             self.decoder.print_ctrls()
@@ -263,8 +264,8 @@ class V4L2Camera(Thread):
 
     def start_capturing(self):
         while not self.stopped:
-            # we have to setup the uvcx h264 ctrls before every streamon
-            self.uvcx_h264_ctrls.setup_ctrls({})
+            # we have to setup the h264 ctrls before every streamon
+            self.h264_ctrls.setup_ctrls({})
             ioctl(self.fd, v4l2.VIDIOC_STREAMON, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
             self.capture_loop()
             ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
