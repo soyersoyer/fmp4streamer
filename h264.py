@@ -1,4 +1,4 @@
-import logging, struct
+import logging, struct, time
 from threading import Condition
 
 class H264NALU:
@@ -77,6 +77,10 @@ class H264Parser(object):
             self.frame_secs = buf.timestamp.secs
             self.frame_usecs = buf.timestamp.usecs
             self.condition.notify_all()
+
+        # chance for other threads to get the GIL even if the there aren't following blocking reads
+        # don't have a better solution yet
+        time.sleep(0.001)
 
     def read_frame(self):
         with self.condition:
