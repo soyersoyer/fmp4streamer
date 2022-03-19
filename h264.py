@@ -72,6 +72,10 @@ class H264Parser(object):
             if not self.sps or not self.pps:
                 logging.error('H264Parser: Invalid H264 first frame. Unable to read SPS and PPS.')
 
+        if len(nalus) == 0:
+            logging.warning('H264Parser: 0 NALU found')
+            return
+
         with self.condition:
             self.nalus = nalus
             self.frame_secs = buf.timestamp.secs
