@@ -3,7 +3,6 @@
 ### Added
 - MP4 rotation
 - Ability to set process priority
-- Razer Kiyo Pro controls
 - Logitech LED controls without uvcdynctrl
 ### Fixed
 - UVCX: Handle if the device is a symlink (like: /dev/v4l/by-id/...)

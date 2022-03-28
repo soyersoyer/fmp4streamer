@@ -260,7 +260,7 @@ You can reduce the latency with lower I-Frame periods. You can set with the `h26
 - Logitech C920 V1 (046d:082d) (works with capture_format = H264 or YUYV or  MJPG) (Thanks @balazspeczeli for the camera)
 - Logitech C930e (046d:0843) (works with capture_format = MJPGH264 or YUYV or MJPG)
 - Logitech BRIO (046d:085e) (works with capture_format = YUYV or MJPG)
-- Razer Kiyo Pro (1532:0e05) (HDR, HDR mode, AF mode, FoV controls added) (works with capture_format = YUYV) (H264 format has issues, ticket opened)
+- Razer Kiyo Pro (1532:0e05) (works with capture_format = YUYV) (YUYV, MJPG, H264 formats have various issues. According to the Razer support, they focus only on the Windows/OBSStudio, they don't care about USB standards or Linux. I can't recommend this camera for Linux.)
 
 # Roadmap
 - [x] Use V4L2 instead of raspivid

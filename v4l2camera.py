@@ -7,7 +7,6 @@ from v4l2ctrls import V4L2Ctrls
 from v4l2m2m import V4L2M2M
 from uvcxh264 import H264Ctrls
 from uvcxlogitech import LogitechCtrls
-from uvcxkiyopro import KiyoProCtrls
 
 class V4L2Camera(Thread):
     def __init__(self, device, pipe, config):
@@ -50,9 +49,6 @@ class V4L2Camera(Thread):
 
         self.logitech_ctrls = LogitechCtrls(self.device, self.fd)
         self.logitech_ctrls.setup_ctrls(params)
-
-        self.kiyo_pro_ctrls = KiyoProCtrls(self.device, self.fd)
-        self.kiyo_pro_ctrls.setup_ctrls(params)
 
         decoder = params.get('decoder')
         decoder_input_format = params.get('decoder_input_format', "MJPG" if capture_format == "JPEG" else capture_format)
@@ -232,7 +228,6 @@ class V4L2Camera(Thread):
         self.ctrls.print_ctrls()
         self.logitech_ctrls.print_ctrls()
         self.h264_ctrls.print_ctrls()
-        self.kiyo_pro_ctrls.print_ctrls()
         print()
         if self.decoder:
             self.decoder.print_ctrls()
