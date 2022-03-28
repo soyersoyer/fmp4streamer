@@ -95,12 +95,12 @@ def find_usb_ids_in_sysfs(device):
     if not os.path.isfile(vendorfile) or not os.path.isfile(productfile):
         return ''
 
-    vendor = read_usb_id_from(vendorfile)
-    product = read_usb_id_from(productfile)
+    vendor = read_usb_id_from_file(vendorfile)
+    product = read_usb_id_from_file(productfile)
 
     return vendor + ':' + product
 
-def read_usb_id_from(file):
+def read_usb_id_from_file(file):
     id = ''
     try:
         with open(file, 'r') as f:
