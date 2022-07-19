@@ -8,6 +8,8 @@
 - UVCX: Handle if the device is a symlink (like: /dev/v4l/by-id/...)
 - Handle V4L2 buffers which are not in order to support BRIO
 - Reduce frame drops
+- MJPGH264: 1080p streaming
+- Fix for H264 capable C922-s (before 2020)
 
 ## [3.4.5] - 2022-03-02
 ### Added
