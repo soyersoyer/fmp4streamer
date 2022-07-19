@@ -1,5 +1,5 @@
 # Changelog
-## [Unreleased]
+## [3.4.6] - 2022-07-19
 ### Added
 - MP4 rotation
 - Ability to set process priority
