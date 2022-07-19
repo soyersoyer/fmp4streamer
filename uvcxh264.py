@@ -353,6 +353,8 @@ class H264Ctrls:
                 logging.warning(f'H264Ctrls: failed to set {k} to {desired_value}, current value {current_value}\n')
 
     def refresh_ctrls(self):
+        if not self.supported():
+            return
         set_h264_config(self.fd, self.unit_id, self.current_config)
 
     def request_h264_idr(self):
