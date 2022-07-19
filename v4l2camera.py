@@ -260,7 +260,7 @@ class V4L2Camera(Thread):
     def start_capturing(self):
         while not self.stopped:
             # we have to setup the h264 ctrls before every streamon
-            self.h264_ctrls.setup_ctrls({})
+            self.h264_ctrls.refresh_ctrls()
             ioctl(self.fd, v4l2.VIDIOC_STREAMON, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
             self.capture_loop()
             ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
