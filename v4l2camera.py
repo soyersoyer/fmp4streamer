@@ -35,7 +35,9 @@ class V4L2Camera(Thread):
             params['uvcx_h264_stream_mux'] = 'H264'
             params['uvcx_h264_width'] = width
             params['uvcx_h264_height'] = height
-
+            # limit the MJPG stream resolution to spare with the USB bandwidth
+            capture_width = 640
+            capture_height = 480
 
         self.ctrls = V4L2Ctrls(self.device, self.fd)
         self.ctrls.setup_v4l2_ctrls(params)
