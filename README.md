@@ -257,7 +257,9 @@ You can reduce the latency with lower I-Frame periods. You can set with the `h26
 - Raspberry PI Camera V1
 - Raspberry PI Camera V2
 - Logitech C270 (works with capture_format = YUYV or MJPG with the Raspiberry pi's H264 encoder)
-- Logitech C920 V1 (046d:082d) (works with capture_format = H264 or YUYV or  MJPG) (Thanks @balazspeczeli for the camera)
+- Logitech C920 V1 (046d:082d) (works with capture_format = H264 or YUYV or MJPG) (Thanks @balazspeczeli for the camera)
+- Logitech C922 Pro (046d:085c) (before 2020) (works with capture_format = MJPGH264 or YUYV or MJPG)
+- Logitech C925e (046d:085b) (works with capture_format = MJPGH264 or YUYV or MJPG)
 - Logitech C930e (046d:0843) (works with capture_format = MJPGH264 or YUYV or MJPG)
 - Logitech BRIO (046d:085e) (works with capture_format = YUYV or MJPG)
 - Razer Kiyo Pro (1532:0e05) (works with capture_format = YUYV) (MJPG, H264 formats have various issues. According to the Razer support, they focus only on the Windows/OBSStudio, they don't care about USB standards or Linux.)
