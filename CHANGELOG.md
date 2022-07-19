@@ -1,4 +1,8 @@
 # Changelog
+## [3.4.7] - 2022-07-19
+### Fixed
+- H264Ctrls: refresh_ctrls: check if it is supported
+
 ## [3.4.6] - 2022-07-19
 ### Added
 - MP4 rotation
