@@ -39,11 +39,18 @@ Fmp4streamer setups the V4L2 device, reads the H264 or MJPGH264 stream from it (
    ```
 
 # Running 
+You may need to run `chmod a+rwx /dev/video0`.
 - from the terminal
     ```
     cd fmp4streamer
     python3 fmp4streamer.py
     ```
+- with Docker
+   ```
+   cd fmp4streamer
+   docker build -t fmp4streamer .
+   docker run --device=/dev/video0 -p 8000:8000 fmp4streamer
+   ```
 - enable running at startup and start now:
     ```
     loginctl enable-linger
