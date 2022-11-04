@@ -25,8 +25,8 @@ class V4L2Camera(Thread):
         self.fd = os.open(self.device, os.O_RDWR, 0)
 
         params = dict(config.items(device))
-        width = int(params.get('width'))
-        height = int(params.get('height'))
+        width = capture_width = int(params.get('width'))
+        height = capture_height = int(params.get('height'))
         fps = int(params.get('fps'))
         capture_format = params.get('capture_format', 'H264')
         self.auto_sleep = config.getboolean(device, 'auto_sleep', fallback=True)
@@ -35,11 +35,9 @@ class V4L2Camera(Thread):
             params['uvcx_h264_stream_mux'] = 'H264'
             params['uvcx_h264_width'] = width
             params['uvcx_h264_height'] = height
-
-        # use the native capture format without the extension
-        capture_format_real = capture_format[0:4]
-        self.init_device(width, height, capture_format_real)
-        self.init_fps(fps)
+            # limit the MJPG stream resolution to spare with the USB bandwidth
+            capture_width = 640
+            capture_height = 480
 
         self.ctrls = V4L2Ctrls(self.device, self.fd)
         self.ctrls.setup_v4l2_ctrls(params)
@@ -49,6 +47,11 @@ class V4L2Camera(Thread):
 
         self.logitech_ctrls = LogitechCtrls(self.device, self.fd)
         self.logitech_ctrls.setup_ctrls(params)
+
+        # use the native capture format without the extension
+        capture_format_real = capture_format[0:4]
+        self.init_device(capture_width, capture_height, capture_format_real)
+        self.init_fps(fps)
 
         decoder = params.get('decoder')
         decoder_input_format = params.get('decoder_input_format', "MJPG" if capture_format == "JPEG" else capture_format)
@@ -260,7 +263,7 @@ class V4L2Camera(Thread):
     def start_capturing(self):
         while not self.stopped:
             # we have to setup the h264 ctrls before every streamon
-            self.h264_ctrls.setup_ctrls({})
+            self.h264_ctrls.refresh_ctrls()
             ioctl(self.fd, v4l2.VIDIOC_STREAMON, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
             self.capture_loop()
             ioctl(self.fd, v4l2.VIDIOC_STREAMOFF, struct.pack('I', v4l2.V4L2_BUF_TYPE_VIDEO_CAPTURE))
